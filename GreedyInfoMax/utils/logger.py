@@ -50,18 +50,26 @@ class Logger:
         final_test=False,
         final_loss=None,
         acc5=None,
-        classification_model=None
+        classification_model=None,
+        component_idx=None
     ):
 
         print("Saving model and log-file to " + self.opt.log_path)
 
         # Save the model checkpoint
         if self.opt.experiment == "vision":
-            for idx, layer in enumerate(model.module.encoder):
-                torch.save(
-                    layer.state_dict(),
-                    os.path.join(self.opt.log_path, "model_{}_{}.ckpt".format(idx, epoch)),
-                )
+            if component_idx == None:
+                for idx, layer in enumerate(model.module.encoder):
+                    torch.save(
+                        layer.state_dict(),
+                        os.path.join(self.opt.log_path, "model_{}_{}.ckpt".format(idx, epoch)),
+                    )
+            else:
+                for idx, layer in enumerate(model.module.encoder):
+                    torch.save(
+                        layer.state_dict(),
+                        os.path.join(self.opt.log_path, "model_{}_{}_{}.ckpt".format(component_idx, idx, epoch)),
+                    )
         else:
             torch.save(
                 model.state_dict(),
