@@ -5,7 +5,7 @@ from GreedyInfoMax.vision.models import PixelCNN_Autoregressor, Resnet_Encoder
 
 
 class FullVisionModel(torch.nn.Module):
-    def __init__(self, opt, calc_loss, patching=False):
+    def __init__(self, opt, calc_loss):
         super().__init__()
         self.opt = opt
         self.contrastive_samples = self.opt.negative_samples
@@ -18,17 +18,14 @@ class FullVisionModel(torch.nn.Module):
         else:
             self.employ_autoregressive = False
 
-        self.model, self.encoder, self.autoregressor = self._create_full_model(opt, patching)
+        self.model, self.encoder, self.autoregressor = self._create_full_model(opt)
 
         print(self.model)
 
-    def _create_full_model(self, opt, patching=False):
+    def _create_full_model(self, opt):
 
         block_dims = [3, 4, 6, 6, 6, 6, 6]
-        if patching:
-            num_channels = [32, 64, 128, 256, 256, 256, 256]
-        else:
-            num_channels = [64, 128, 256, 256, 256, 256, 256]
+        num_channels = [64, 128, 256, 256, 256, 256, 256]
 
         full_model = nn.ModuleList([])
         encoder = nn.ModuleList([])

@@ -1,14 +1,19 @@
 import torch
 
-from GreedyInfoMax.vision.models import FullModel, ClassificationModel
+from GreedyInfoMax.vision.models import FullModel, ClassificationModel, SmallModel
 from GreedyInfoMax.utils import model_utils
 
 
-def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=True, patching=False):
+def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=True):
 
-    model = FullModel.FullVisionModel(
-        opt, calc_loss, patching
-    )
+    if not opt.use_simple_resnet:
+        model = FullModel.FullVisionModel(
+            opt, calc_loss
+        )
+    else:
+        model = SmallModel.ResNetModel(
+            opt, calc_loss
+        )
 
     optimizer = []
     if opt.model_splits == 1:
@@ -18,11 +23,13 @@ def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=Tr
     elif opt.model_splits >= 3:
         # use separate optimizer for each module, so gradients don't get mixed up
         for idx, layer in enumerate(model.encoder):
-            optimizer.append(torch.optim.Adam(layer.parameters(), lr=opt.learning_rate))
+            optimizer.append(torch.optim.Adam(
+                layer.parameters(), lr=opt.learning_rate))
     else:
         raise NotImplementedError
 
-    model, num_GPU = model_utils.distribute_over_GPUs(opt, model, num_GPU=num_GPU)
+    model, num_GPU = model_utils.distribute_over_GPUs(
+        opt, model, num_GPU=num_GPU)
 
     model, optimizer = model_utils.reload_weights(
         opt, model, optimizer, reload_model=reload_model

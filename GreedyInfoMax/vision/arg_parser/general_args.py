@@ -73,4 +73,21 @@ def parse_general_args(parser):
         "(be careful, this can overwrite previous results); "
         "otherwise saves logs according to time-stamp",
     )
+    parser.add_option(
+        "--num_patches",
+        default=-1,
+        help="The number of patchs after splitting an image"
+    )
+    parser.add_option(
+        "--patching",
+        default=False,
+        action="store_true",
+        help="Boolean to decide whether to split an image into <num_patches> patches"
+    )
+    parser.add_option(
+        "--use-simple-resnet",
+        default=False,
+        action="store_true",
+        help="Boolean to decide whether to use a ResNet 50 as an encoder"
+    )
     return parser
