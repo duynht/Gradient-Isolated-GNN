@@ -140,7 +140,7 @@ if __name__ == "__main__":
     # load model
     models, optimizers = [None for i in range(4)], [None for i in range(4)]
     for i in range(4):
-        models[i], optimizers[i] = load_vision_model.load_model_and_optimizer(opt)
+        models[i], optimizers[i] = load_vision_model.load_model_and_optimizer(opt, patching=True)
 
     logs = logger.Logger(opt)
 

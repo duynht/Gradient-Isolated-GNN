@@ -4,10 +4,10 @@ from GreedyInfoMax.vision.models import FullModel, ClassificationModel
 from GreedyInfoMax.utils import model_utils
 
 
-def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=True):
+def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=True, patching=False):
 
     model = FullModel.FullVisionModel(
-        opt, calc_loss
+        opt, calc_loss, patching
     )
 
     optimizer = []
