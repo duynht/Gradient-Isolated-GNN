@@ -167,7 +167,7 @@ if __name__ == "__main__":
     context_models = []
     for component_idx in range(4):
         context_model, _ = load_vision_model.load_model_and_optimizer(
-            opt, reload_model=True, calc_loss=False
+            opt, reload_model=True, calc_loss=False, component_idx=component_idx
         )
         context_models.append(context_model)
     context_model.module.switch_calc_loss(False)

@@ -51,7 +51,7 @@ def makeDeltaOrthogonal(weights, gain):
         weights.mul_(gain)
 
 
-def reload_weights(opt, model, optimizer, reload_model):
+def reload_weights(opt, model, optimizer, reload_model, component_idx=None):
     ## reload weights for training of the linear classifier
     if (opt.model_type == 0) and reload_model:  # or opt.model_type == 2)
         print("Loading weights from ", opt.model_path)
@@ -64,16 +64,28 @@ def reload_weights(opt, model, optimizer, reload_model):
                 )
             )
         else:
-            for idx, layer in enumerate(model.module.encoder):
-                model.module.encoder[idx].load_state_dict(
-                    torch.load(
-                        os.path.join(
-                            opt.model_path,
-                            "model_{}_{}.ckpt".format(idx, opt.model_num),
-                        ),
-                         map_location=opt.device.type,
+            if component_idx == None:
+                for idx, layer in enumerate(model.module.encoder):
+                    model.module.encoder[idx].load_state_dict(
+                        torch.load(
+                            os.path.join(
+                                opt.model_path,
+                                "model_{}_{}.ckpt".format(idx, opt.model_num),
+                            ),
+                            map_location=opt.device.type,
+                        )
                     )
-                )
+            else:
+                for idx, layer in enumerate(model.module.encoder):
+                    model.module.encoder[idx].load_state_dict(
+                        torch.load(
+                            os.path.join(
+                                opt.model_path,
+                                "model_{}_{}_{}.ckpt".format(component_idx, idx, opt.model_num),
+                            ),
+                            map_location=opt.device.type,
+                        )
+                    )
 
     ## reload weights and optimizers for continuing training
     elif opt.start_epoch > 0:
@@ -90,29 +102,52 @@ def reload_weights(opt, model, optimizer, reload_model):
                 strict=False,
             )
         else:
-            for idx, layer in enumerate(model.module.encoder):
-                model.module.encoder[idx].load_state_dict(
-                    torch.load(
-                        os.path.join(
-                            opt.model_path,
-                            "model_{}_{}.ckpt".format(idx, opt.start_epoch),
-                        ),
-                        map_location=opt.device.type,
+            if component_idx == None:
+                for idx, layer in enumerate(model.module.encoder):
+                    model.module.encoder[idx].load_state_dict(
+                        torch.load(
+                            os.path.join(
+                                opt.model_path,
+                                "model_{}_{}.ckpt".format(idx, opt.start_epoch),
+                            ),
+                            map_location=opt.device.type,
+                        )
                     )
-                )
+            else:
+                for idx, layer in enumerate(model.module.encoder):
+                    model.module.encoder[idx].load_state_dict(
+                        torch.load(
+                            os.path.join(
+                                opt.model_path,
+                                "model_{}_{}_{}.ckpt".format(component_idx, idx, opt.start_epoch),
+                            ),
+                            map_location=opt.device.type,
+                        )
+                    )
 
         for i, optim in enumerate(optimizer):
             if opt.model_splits > 3 and i > 2:
                 break
-            optim.load_state_dict(
-                torch.load(
-                    os.path.join(
-                        opt.model_path,
-                        "optim_{}_{}.ckpt".format(str(i), opt.start_epoch),
-                    ),
-                    map_location=opt.device.type,
+            if component_idx == None:
+                optim.load_state_dict(
+                    torch.load(
+                        os.path.join(
+                            opt.model_path,
+                            "optim_{}_{}.ckpt".format(str(i), opt.start_epoch),
+                        ),
+                        map_location=opt.device.type,
+                    )
                 )
-            )
+            else:
+                optim.load_state_dict(
+                    torch.load(
+                        os.path.join(
+                            opt.model_path,
+                            "optim_{}_{}_{}.ckpt".format(component_idx, str(i), opt.start_epoch),
+                        ),
+                        map_location=opt.device.type,
+                    )
+                )
     else:
         print("Randomly initialized model")
 

@@ -4,7 +4,7 @@ from GreedyInfoMax.vision.models import FullModel, ClassificationModel, SmallMod
 from GreedyInfoMax.utils import model_utils
 
 
-def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=True):
+def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=True, component_idx=None):
 
     if not opt.use_simple_resnet:
         model = FullModel.FullVisionModel(
@@ -32,7 +32,7 @@ def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=Tr
         opt, model, num_GPU=num_GPU)
 
     model, optimizer = model_utils.reload_weights(
-        opt, model, optimizer, reload_model=reload_model
+        opt, model, optimizer, reload_model=reload_model, component_idx=component_idx
     )
 
     return model, optimizer
