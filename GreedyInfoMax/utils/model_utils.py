@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import os
+from collections import OrderedDict
 
 
 def distribute_over_GPUs(opt, model, num_GPU):
@@ -78,15 +79,18 @@ def reload_weights(opt, model, optimizer, reload_model, component_idx=None):
                     )
             else:
                 for idx, layer in enumerate(model.module.encoder):
-                    model.module.encoder[idx].load_state_dict(
-                        torch.load(
-                            os.path.join(
-                                opt.model_path,
-                                "model_{}_{}_{}.ckpt".format(component_idx, idx, opt.model_num),
-                            ),
-                            map_location=opt.device.type,
-                        )
-                    )
+                    state_dict = torch.load(
+                                os.path.join(
+                                    opt.model_path,
+                                    "model_{}_{}_{}.ckpt".format(component_idx, idx, opt.model_num),
+                                ),
+                                map_location=opt.device.type,
+                            )
+                    new_state_dict = OrderedDict()
+                    for k, v in state_dict.items():
+                        name = k[7:] # remove `module.` from the name
+                        new_state_dict[name] = v
+                    model.module.encoder[idx].load_state_dict(new_state_dict)
 
     ## reload weights and optimizers for continuing training
     elif opt.start_epoch > 0:
