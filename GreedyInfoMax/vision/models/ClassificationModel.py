@@ -30,5 +30,8 @@ class ClassificationModel(torch.nn.Module):
 
     def forward(self, x, *args):
         x = self.avg_pool(x).squeeze()
+        print(x.shape)
+        x = x.view(x.size(0), -1)
+        print(x.shape)
         x = self.model(x).squeeze()
         return x
