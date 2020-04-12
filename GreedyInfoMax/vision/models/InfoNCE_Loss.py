@@ -52,8 +52,8 @@ class InfoNCE_Loss(nn.Module):
         for k in range(1, self.k_predictions + 1):
             ### compute log f(c_t, x_{t+k}) = z^T_{t+k} W_k c_t
             # compute z^T_{t+k} W_k:
-            print(k, skip_step)
-            print(z[:, :, (k + skip_step) :, :].shape)
+            # print(k, skip_step)
+            # print(z[:, :, (k + skip_step) :, :].shape)
             try:
                 ztwk = (
                 self.W_k[k - 1]
@@ -62,7 +62,7 @@ class InfoNCE_Loss(nn.Module):
                 .contiguous()
             )  # y, x, b, c
             except RuntimeError as e:
-                print(e)
+                # print(e)
                 break            
 
             ztwk_shuf = ztwk.view(
