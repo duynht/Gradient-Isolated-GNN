@@ -3,10 +3,10 @@ import torch.nn as nn
 
 
 class ClassificationModel(torch.nn.Module):
-    def __init__(self, in_channels=256, num_classes=200, hidden_nodes=0):
+    def __init__(self, in_channels=256, num_classes=200, hidden_nodes=0, avg_pooling_kernel_size=7):
         super().__init__()
         self.in_channels = in_channels
-        self.avg_pool = nn.AvgPool2d((7, 7), stride=0, padding=0)
+        self.avg_pool = nn.AvgPool2d((avg_pooling_kernel_size, avg_pooling_kernel_size), stride=0, padding=0)
         self.model = nn.Sequential()
 
         if hidden_nodes > 0:
@@ -29,6 +29,6 @@ class ClassificationModel(torch.nn.Module):
         print(self.model)
 
     def forward(self, x, *args):
-        # x = self.avg_pool(x).squeeze()
+        x = self.avg_pool(x).squeeze()
         x = self.model(x).squeeze()
         return x

@@ -39,7 +39,7 @@ def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=Tr
     return model, optimizer
 
 
-def load_classification_model(opt):
+def load_classification_model(opt, avg_pooling_kernel_size = 7):
 
     if opt.resnet == 34:
         in_channels = 256
@@ -52,7 +52,7 @@ def load_classification_model(opt):
         raise Exception("Invalid option")
 
     classification_model = ClassificationModel.ClassificationModel(
-        in_channels=in_channels, num_classes=num_classes,
+        in_channels=in_channels, num_classes=num_classes, avg_pooling_kernel_size=avg_pooling_kernel_size
     ).to(opt.device)
 
     return classification_model

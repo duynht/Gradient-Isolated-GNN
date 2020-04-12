@@ -50,9 +50,12 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
                         z.to(opt.device)
                     else:
                         z += component_z
+                    print(z.shape, component_z.shape)
                 z /= 4
             z = z.detach() #double security that no gradients go to representation learning part of model
-
+            # print(z.shape)
+            # z = torch.mean(torch.mean(z, -1, True), -2, True)
+            print(z.shape)
             prediction = classification_model(z)
 
             target = target.to(opt.device)
@@ -115,15 +118,35 @@ def test_logistic_regression(opt, context_model, classification_model, test_load
     epoch_acc1 = 0
     epoch_acc5 = 0
 
-    for step, (img, target) in enumerate(test_loader):
+    for step, (full_img, target) in enumerate(test_loader):
 
-        model_input = img.to(opt.device)
+        batch_size, num_channels, img_h, img_w = full_img.shape
+        components = []
+        # first component
+        components.append(full_img[:, :, :img_h//2, :img_w//2])
+        # second component
+        components.append(full_img[:, :, :img_h//2, img_w//2:])
+        # third component
+        components.append(full_img[:, :, img_h//2:, :img_w//2])
+        # fourth component
+        components.append(full_img[:, :, img_h//2:, img_w//2:])
+        model_inputs = []
+        for component_idx in range(4):
+            model_inputs.append(components[component_idx].to(opt.device))
 
         with torch.no_grad():
-            _, _, z, _ = context_model(model_input, target)
-
-        z = z.detach()
-
+            z = None
+            for component_idx in range(4):
+                _, _, component_z, _ = context_model(model_inputs[component_idx], target)
+                if z is None:
+                    z = copy.deepcopy(component_z)
+                    z.to(opt.device)
+                else:
+                    z += component_z
+            z /= 4
+            
+        z = z.detach() #double security that no gradients go to representation learning part of model
+        # z = torch.mean(torch.mean(z, -1, True), -1, True)
         prediction = classification_model(z)
 
         target = target.to(opt.device)
@@ -179,7 +202,7 @@ if __name__ == "__main__":
 
     _, _, train_loader, _, test_loader, _ = get_dataloader.get_dataloader(opt)
 
-    classification_model = load_vision_model.load_classification_model(opt)
+    classification_model = load_vision_model.load_classification_model(opt, avg_pooling_kernel_size=3)
 
     if opt.model_type == 2:
         params = list(context_model.parameters()) + list(classification_model.parameters())
