@@ -79,18 +79,21 @@ def reload_weights(opt, model, optimizer, reload_model, component_idx=None):
                     )
             else:
                 for idx, layer in enumerate(model.module.encoder):
-                    state_dict = torch.load(
-                                os.path.join(
-                                    opt.model_path,
-                                    "model_{}_{}_{}.ckpt".format(component_idx, idx, opt.model_num),
-                                ),
-                                map_location=opt.device.type,
-                            )
-                    new_state_dict = OrderedDict()
-                    for k, v in state_dict.items():
-                        name = k[6:] # remove `model.` from the name
-                        new_state_dict[name] = v
-                    model.module.encoder[idx].load_state_dict(new_state_dict)
+                    try:
+                        state_dict = torch.load(
+                                    os.path.join(
+                                        opt.model_path,
+                                        "model_{}_{}_{}.ckpt".format(component_idx, idx, opt.model_num),
+                                    ),
+                                    map_location=opt.device.type,
+                                )
+                        # new_state_dict = OrderedDict()
+                        # for k, v in state_dict.items():
+                        #     name = k[7:] # remove `module.` from the name
+                        #     new_state_dict[name] = v
+                        model.module.encoder[idx].load_state_dict(state_dict)
+                    except RuntimeError as e:
+                        print(e)
 
     ## reload weights and optimizers for continuing training
     elif opt.start_epoch > 0:
