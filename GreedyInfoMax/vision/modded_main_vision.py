@@ -56,7 +56,6 @@ def train(opt, models):
             # split each image in batch into 4 components
             batch_size, num_channels, img_h, img_w = full_img.shape
             components = []
-            # print(img_h/2, img_w/2)
             # first component
             components.append(full_img[:, :, :img_h//2, :img_w//2])
             # second component
