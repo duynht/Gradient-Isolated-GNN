@@ -5,6 +5,7 @@ from GreedyInfoMax.utils import model_utils
 
 
 def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=True, component_idx=None):
+    print("Component index in load_model_and_optimizer:", component_idx)
 
     if not opt.use_simple_resnet:
         model = FullModel.FullVisionModel(

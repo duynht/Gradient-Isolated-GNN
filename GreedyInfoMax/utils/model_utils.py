@@ -64,7 +64,7 @@ def reload_weights(opt, model, optimizer, reload_model, component_idx=None):
                 )
             )
         else:
-            print("Component index:", component_idx)
+            print("Component index in reload weights:", component_idx)
             if component_idx == None:
                 for idx, layer in enumerate(model.module.encoder):
                     model.module.encoder[idx].load_state_dict(
