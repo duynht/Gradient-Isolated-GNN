@@ -88,7 +88,7 @@ def reload_weights(opt, model, optimizer, reload_model, component_idx=None):
                             )
                     new_state_dict = OrderedDict()
                     for k, v in state_dict.items():
-                        name = k[7:] # remove `module.` from the name
+                        name = k[6:] # remove `model.` from the name
                         new_state_dict[name] = v
                     model.module.encoder[idx].load_state_dict(new_state_dict)
 
