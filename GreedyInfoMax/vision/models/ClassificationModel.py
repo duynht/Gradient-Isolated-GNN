@@ -29,6 +29,6 @@ class ClassificationModel(torch.nn.Module):
         print(self.model)
 
     def forward(self, x, *args):
-        x = self.avg_pool(x).squeeze()
+        # x = self.avg_pool(x).squeeze()
         x = self.model(x).squeeze()
         return x
