@@ -50,12 +50,11 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
                         z.to(opt.device)
                     else:
                         z += component_z
-                    print(z.shape, component_z.shape)
                 z /= 4
             z = z.detach() #double security that no gradients go to representation learning part of model
             # print(z.shape)
             # z = torch.mean(torch.mean(z, -1, True), -2, True)
-            print(z.shape)
+            # print(z.shape)
             prediction = classification_model(z)
 
             target = target.to(opt.device)
