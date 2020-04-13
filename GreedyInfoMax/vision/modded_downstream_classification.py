@@ -106,27 +106,32 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
         )
 
 
-def get_feature_vector_from_image(full_img):
+def get_feature_vector_from_image(full_img, target):
     batch_size, num_channels, img_h, img_w = full_img.shape
     patches = []
+    # first patch
+    patches.append(full_img[:, :, :img_h//2, :img_w//2])
+    # second patch
+    patches.append(full_img[:, :, :img_h//2, img_w//2:])
+    # third patch
+    patches.append(full_img[:, :, img_h//2:, :img_w//2])
+    # fourth patch
+    patches.append(full_img[:, :, img_h//2:, img_w//2:])
 
-    for i in range(0, img_h, 2):
-        for j in range(0, img_w, 2):
-            patches.append(full_img[:, :, i:i+2, j+2].to(opt.device))
-
-    num_patches = len(patches)
-
+    model_inputs = []
+    for patch_idx in range(4):
+        model_inputs.append(patches[patch_idx].to(opt.device))
 
     with torch.no_grad():
         z = None
-        for patch in patches:
-            patch_z = context_model(patch)
+        for patch_idx in range(4):
+            _, _, patch_z, _ = context_model(model_inputs[patch_idx], target)
             if z is None:
                 z = copy.deepcopy(patch_z)
                 z.to(opt.device)
             else:
                 z += patch_z
-        z /= num_patches
+        z /= 4
     z = z.detach() #double security that no gradients go to representation learning part of model
     return z
 
@@ -146,7 +151,7 @@ def train_logistic_regression_resnet_encoder(opt, context_models, classification
 
             classification_model.zero_grad()
 
-            z = get_feature_vector_from_image(full_img)
+            z = get_feature_vector_from_image(full_img, target)
             prediction = classification_model(z)
 
             target = target.to(opt.device)
@@ -276,7 +281,7 @@ def test_logistic_regression_resnet_encoder(opt, context_model, classification_m
 
     for step, (full_img, target) in enumerate(test_loader):
 
-        z = get_feature_vector_from_image(full_img)
+        z = get_feature_vector_from_image(full_img, target)
         prediction = classification_model(z)
 
         target = target.to(opt.device)
