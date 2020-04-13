@@ -27,19 +27,113 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
             classification_model.zero_grad()
 
             batch_size, num_channels, img_h, img_w = full_img.shape
-            components = []
+            patches = []
             # first component
-            components.append(full_img[:, :, :img_h//2, :img_w//2])
+            patches.append(full_img[:, :, :img_h//2, :img_w//2])
             # second component
-            components.append(full_img[:, :, :img_h//2, img_w//2:])
+            patches.append(full_img[:, :, :img_h//2, img_w//2:])
             # third component
-            components.append(full_img[:, :, img_h//2:, :img_w//2])
+            patches.append(full_img[:, :, img_h//2:, :img_w//2])
             # fourth component
-            components.append(full_img[:, :, img_h//2:, img_w//2:])
+            patches.append(full_img[:, :, img_h//2:, img_w//2:])
 
             model_inputs = []
             for component_idx in range(4):
-                model_inputs.append(components[component_idx].to(opt.device))
+                model_inputs.append(patches[component_idx].to(opt.device))
+
+            with torch.no_grad():
+                z = None
+                for component_idx in range(4):
+                    _, _, component_z, _ = context_model(model_inputs[component_idx], target)
+                    if z is None:
+                        z = copy.deepcopy(component_z)
+                        z.to(opt.device)
+                    else:
+                        z += component_z
+                z /= 4
+            z = z.detach() #double security that no gradients go to representation learning part of model
+            # print(z.shape)
+            # z = torch.mean(torch.mean(z, -1, True), -2, True)
+            # print(z.shape)
+            prediction = classification_model(z)
+
+            target = target.to(opt.device)
+            loss = criterion(prediction, target)
+
+            # Backward and optimize
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # calculate accuracy
+            acc1, acc5 = utils.accuracy(prediction.data, target, topk=(1, 5))
+            epoch_acc1 += acc1
+            epoch_acc5 += acc5
+
+            sample_loss = loss.item()
+            loss_epoch += sample_loss
+
+            if step % 10 == 0:
+                print(
+                    "Epoch [{}/{}], Step [{}/{}], Time (s): {:.1f}, Acc1: {:.4f}, Acc5: {:.4f}, Loss: {:.4f}".format(
+                        epoch + 1,
+                        opt.num_epochs,
+                        step,
+                        total_step,
+                        time.time() - starttime,
+                        acc1,
+                        acc5,
+                        sample_loss,
+                    )
+                )
+                starttime = time.time()
+
+        if opt.validate:
+            # validate the model - in this case, test_loader loads validation data
+            val_acc1, _ , val_loss = test_logistic_regression(
+                opt, context_model, classification_model, test_loader
+            )
+            logs.append_val_loss([val_loss])
+
+        print("Overall accuracy for this epoch: ", epoch_acc1 / total_step)
+        logs.append_train_loss([loss_epoch / total_step])
+        logs.create_log(
+            context_model,
+            epoch=epoch,
+            classification_model=classification_model,
+            accuracy=epoch_acc1 / total_step,
+            acc5=epoch_acc5 / total_step,
+        )
+
+def train_logistic_regression_resnet_encoder(opt, context_models, classification_model, train_loader):
+    total_step = len(train_loader)
+    classification_model.train()
+
+    starttime = time.time()
+
+    for epoch in range(opt.num_epochs):
+        epoch_acc1 = 0
+        epoch_acc5 = 0
+
+        loss_epoch = 0
+        for step, (full_img, target) in enumerate(train_loader):
+
+            classification_model.zero_grad()
+
+            batch_size, num_channels, img_h, img_w = full_img.shape
+            patches = []
+            # first component
+            patches.append(full_img[:, :, :img_h//2, :img_w//2])
+            # second component
+            patches.append(full_img[:, :, :img_h//2, img_w//2:])
+            # third component
+            patches.append(full_img[:, :, img_h//2:, :img_w//2])
+            # fourth component
+            patches.append(full_img[:, :, img_h//2:, img_w//2:])
+
+            model_inputs = []
+            for component_idx in range(4):
+                model_inputs.append(patches[component_idx].to(opt.device))
 
             with torch.no_grad():
                 z = None
@@ -120,18 +214,18 @@ def test_logistic_regression(opt, context_model, classification_model, test_load
     for step, (full_img, target) in enumerate(test_loader):
 
         batch_size, num_channels, img_h, img_w = full_img.shape
-        components = []
+        patches = []
         # first component
-        components.append(full_img[:, :, :img_h//2, :img_w//2])
+        patches.append(full_img[:, :, :img_h//2, :img_w//2])
         # second component
-        components.append(full_img[:, :, :img_h//2, img_w//2:])
+        patches.append(full_img[:, :, :img_h//2, img_w//2:])
         # third component
-        components.append(full_img[:, :, img_h//2:, :img_w//2])
+        patches.append(full_img[:, :, img_h//2:, :img_w//2])
         # fourth component
-        components.append(full_img[:, :, img_h//2:, img_w//2:])
+        patches.append(full_img[:, :, img_h//2:, img_w//2:])
         model_inputs = []
         for component_idx in range(4):
-            model_inputs.append(components[component_idx].to(opt.device))
+            model_inputs.append(patches[component_idx].to(opt.device))
 
         with torch.no_grad():
             z = None
