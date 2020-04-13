@@ -203,14 +203,13 @@ if __name__ == "__main__":
             )
             context_model.module.switch_calc_loss(False)
             context_models.append(context_model)
+            
+        # model_type=2 is supervised model which trains entire architecture; otherwise just extract features
+        if opt.model_type != 2:
+            for i in range(4):
+                context_models[i].eval()
     else:
         context_models.append(SmallModel.ResNetModel(opt))
-
-
-    # model_type=2 is supervised model which trains entire architecture; otherwise just extract features
-    if opt.model_type != 2:
-        for i in range(4):
-            context_models[i].eval()
 
     _, _, train_loader, _, test_loader, _ = get_dataloader.get_dataloader(opt)
 
