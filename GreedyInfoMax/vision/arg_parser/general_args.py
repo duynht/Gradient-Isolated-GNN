@@ -74,12 +74,7 @@ def parse_general_args(parser):
         "otherwise saves logs according to time-stamp",
     )
     parser.add_option(
-        "--num_patches",
-        default=-1,
-        help="The number of patchs after splitting an image"
-    )
-    parser.add_option(
-        "--patching",
+        "--small-patching",
         default=False,
         action="store_true",
         help="Boolean to decide whether to split an image into <num_patches> patches"

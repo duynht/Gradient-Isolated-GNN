@@ -3,7 +3,7 @@ import torch
 
 
 class ResNetModel(torch.nn.Module):
-    def __init__(self, opt, calc_loss):
+    def __init__(self, opt):
         super().__init__()
         self.opt = opt
 
@@ -30,5 +30,5 @@ class ResNetModel(torch.nn.Module):
 
         return torchvision.models.resnet50(pretrained=True)
 
-    def forward(self, x, label, n=3):
+    def forward(self, x):
         return self.model(x)

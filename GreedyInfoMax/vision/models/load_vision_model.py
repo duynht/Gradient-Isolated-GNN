@@ -4,18 +4,12 @@ from GreedyInfoMax.vision.models import FullModel, ClassificationModel, SmallMod
 from GreedyInfoMax.utils import model_utils
 
 
-def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=True, component_idx=None):
-    # print("Component index in load_model_and_optimizer:", component_idx)
+def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=True, patch_idx=None):
+    # print("patch index in load_model_and_optimizer:", patch_idx)
 
-    if not opt.use_simple_resnet:
-        model = FullModel.FullVisionModel(
-            opt, calc_loss
-        )
-    else:
-        model = SmallModel.ResNetModel(
-            opt, calc_loss
-        )
-
+    model = FullModel.FullVisionModel(
+        opt, calc_loss
+    )
     optimizer = []
     if opt.model_splits == 1:
         optimizer.append(
@@ -33,7 +27,7 @@ def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=Tr
         opt, model, num_GPU=num_GPU)
 
     model, optimizer = model_utils.reload_weights(
-        opt, model, optimizer, reload_model=reload_model, component_idx=component_idx
+        opt, model, optimizer, reload_model=reload_model, patch_idx=patch_idx
     )
 
     return model, optimizer

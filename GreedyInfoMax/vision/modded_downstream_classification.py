@@ -7,7 +7,7 @@ import copy
 ## own modules
 from GreedyInfoMax.vision.data import get_dataloader
 from GreedyInfoMax.vision.arg_parser import arg_parser
-from GreedyInfoMax.vision.models import load_vision_model
+from GreedyInfoMax.vision.models import load_vision_model, SmallModel
 from GreedyInfoMax.utils import logger, utils
 
 
@@ -28,28 +28,28 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
 
             batch_size, num_channels, img_h, img_w = full_img.shape
             patches = []
-            # first component
+            # first patch
             patches.append(full_img[:, :, :img_h//2, :img_w//2])
-            # second component
+            # second patch
             patches.append(full_img[:, :, :img_h//2, img_w//2:])
-            # third component
+            # third patch
             patches.append(full_img[:, :, img_h//2:, :img_w//2])
-            # fourth component
+            # fourth patch
             patches.append(full_img[:, :, img_h//2:, img_w//2:])
 
             model_inputs = []
-            for component_idx in range(4):
-                model_inputs.append(patches[component_idx].to(opt.device))
+            for patch_idx in range(4):
+                model_inputs.append(patches[patch_idx].to(opt.device))
 
             with torch.no_grad():
                 z = None
-                for component_idx in range(4):
-                    _, _, component_z, _ = context_model(model_inputs[component_idx], target)
+                for patch_idx in range(4):
+                    _, _, patch_z, _ = context_model(model_inputs[patch_idx], target)
                     if z is None:
-                        z = copy.deepcopy(component_z)
+                        z = copy.deepcopy(patch_z)
                         z.to(opt.device)
                     else:
-                        z += component_z
+                        z += patch_z
                 z /= 4
             z = z.detach() #double security that no gradients go to representation learning part of model
             # print(z.shape)
@@ -105,6 +105,32 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
             acc5=epoch_acc5 / total_step,
         )
 
+
+def get_feature_vector_from_image(full_img):
+    batch_size, num_channels, img_h, img_w = full_img.shape
+    patches = []
+
+    for i in range(0, img_h, 2):
+        for j in range(0, img_w, 2):
+            patches.append(full_img[:, :, i:i+2, j+2].to(opt.device))
+
+    num_patches = len(patches)
+
+
+    with torch.no_grad():
+        z = None
+        for patch in patches:
+            patch_z = context_model(patch)
+            if z is None:
+                z = copy.deepcopy(patch_z)
+                z.to(opt.device)
+            else:
+                z += patch_z
+        z /= num_patches
+    z = z.detach() #double security that no gradients go to representation learning part of model
+    return z
+
+
 def train_logistic_regression_resnet_encoder(opt, context_models, classification_model, train_loader):
     total_step = len(train_loader)
     classification_model.train()
@@ -120,35 +146,7 @@ def train_logistic_regression_resnet_encoder(opt, context_models, classification
 
             classification_model.zero_grad()
 
-            batch_size, num_channels, img_h, img_w = full_img.shape
-            patches = []
-            # first component
-            patches.append(full_img[:, :, :img_h//2, :img_w//2])
-            # second component
-            patches.append(full_img[:, :, :img_h//2, img_w//2:])
-            # third component
-            patches.append(full_img[:, :, img_h//2:, :img_w//2])
-            # fourth component
-            patches.append(full_img[:, :, img_h//2:, img_w//2:])
-
-            model_inputs = []
-            for component_idx in range(4):
-                model_inputs.append(patches[component_idx].to(opt.device))
-
-            with torch.no_grad():
-                z = None
-                for component_idx in range(4):
-                    _, _, component_z, _ = context_model(model_inputs[component_idx], target)
-                    if z is None:
-                        z = copy.deepcopy(component_z)
-                        z.to(opt.device)
-                    else:
-                        z += component_z
-                z /= 4
-            z = z.detach() #double security that no gradients go to representation learning part of model
-            # print(z.shape)
-            # z = torch.mean(torch.mean(z, -1, True), -2, True)
-            # print(z.shape)
+            z = get_feature_vector_from_image(full_img)
             prediction = classification_model(z)
 
             target = target.to(opt.device)
@@ -215,31 +213,70 @@ def test_logistic_regression(opt, context_model, classification_model, test_load
 
         batch_size, num_channels, img_h, img_w = full_img.shape
         patches = []
-        # first component
+        # first patch
         patches.append(full_img[:, :, :img_h//2, :img_w//2])
-        # second component
+        # second patch
         patches.append(full_img[:, :, :img_h//2, img_w//2:])
-        # third component
+        # third patch
         patches.append(full_img[:, :, img_h//2:, :img_w//2])
-        # fourth component
+        # fourth patch
         patches.append(full_img[:, :, img_h//2:, img_w//2:])
         model_inputs = []
-        for component_idx in range(4):
-            model_inputs.append(patches[component_idx].to(opt.device))
+        for patch_idx in range(4):
+            model_inputs.append(patches[patch_idx].to(opt.device))
 
         with torch.no_grad():
             z = None
-            for component_idx in range(4):
-                _, _, component_z, _ = context_model(model_inputs[component_idx], target)
+            for patch_idx in range(4):
+                _, _, patch_z, _ = context_model(model_inputs[patch_idx], target)
                 if z is None:
-                    z = copy.deepcopy(component_z)
+                    z = copy.deepcopy(patch_z)
                     z.to(opt.device)
                 else:
-                    z += component_z
+                    z += patch_z
             z /= 4
             
         z = z.detach() #double security that no gradients go to representation learning part of model
         # z = torch.mean(torch.mean(z, -1, True), -1, True)
+        prediction = classification_model(z)
+
+        target = target.to(opt.device)
+        loss = criterion(prediction, target)
+
+        # calculate accuracy
+        acc1, acc5 = utils.accuracy(prediction.data, target, topk=(1, 5))
+        epoch_acc1 += acc1
+        epoch_acc5 += acc5
+
+        sample_loss = loss.item()
+        loss_epoch += sample_loss
+
+        if step % 10 == 0:
+            print(
+                "Step [{}/{}], Time (s): {:.1f}, Acc1: {:.4f}, Acc5: {:.4f}, Loss: {:.4f}".format(
+                    step, total_step, time.time() - starttime, acc1, acc5, sample_loss
+                )
+            )
+            starttime = time.time()
+
+    print("Testing Accuracy: ", epoch_acc1 / total_step)
+    return epoch_acc1 / total_step, epoch_acc5 / total_step, loss_epoch / total_step
+
+
+def test_logistic_regression_resnet_encoder(opt, context_model, classification_model, test_loader):
+    total_step = len(test_loader)
+    context_model.eval()
+    classification_model.eval()
+
+    starttime = time.time()
+
+    loss_epoch = 0
+    epoch_acc1 = 0
+    epoch_acc5 = 0
+
+    for step, (full_img, target) in enumerate(test_loader):
+
+        z = get_feature_vector_from_image(full_img)
         prediction = classification_model(z)
 
         target = target.to(opt.device)
@@ -281,17 +318,21 @@ if __name__ == "__main__":
 
     # load pretrained model
     context_models = []
-    for component_idx in range(4):
-        context_model, _ = load_vision_model.load_model_and_optimizer(
-            opt, reload_model=True, calc_loss=False, component_idx=component_idx
-        )
-        context_models.append(context_model)
-    context_model.module.switch_calc_loss(False)
+    if opt.use_simple_resnet:
+        context_models.append(SmallModel.ResNetModel(opt))
 
-    ## model_type=2 is supervised model which trains entire architecture; otherwise just extract features
-    if opt.model_type != 2:
-        for i in range(4):
-            context_models[i].eval()
+    else:   
+        for patch_idx in range(4):
+            context_model, _ = load_vision_model.load_model_and_optimizer(
+                opt, reload_model=True, calc_loss=False, patch_idx=patch_idx
+            )
+            context_model.module.switch_calc_loss(False)
+            context_models.append(context_model)
+
+            ## model_type=2 is supervised model which trains entire architecture; otherwise just extract features
+            if opt.model_type != 2:
+                for i in range(4):
+                    context_models[i].eval()
 
     _, _, train_loader, _, test_loader, _ = get_dataloader.get_dataloader(opt)
 
@@ -308,13 +349,22 @@ if __name__ == "__main__":
     logs = logger.Logger(opt)
 
     try:
-        # Train the model
-        train_logistic_regression(opt, context_models, classification_model, train_loader)
+        if opt.use_simple_resnet:
+            # Train the model
+            train_logistic_regression_resnet_encoder(opt, context_models, classification_model, train_loader)
 
-        # Test the model
-        acc1, acc5, _ = test_logistic_regression(
-            opt, context_model, classification_model, test_loader
-        )
+            # Test the model
+            acc1, acc5, _ = test_logistic_regression_resnet_encoder(
+                opt, context_model, classification_model, test_loader
+            )
+        else:
+            # Train the model
+            train_logistic_regression(opt, context_models, classification_model, train_loader)
+
+            # Test the model
+            acc1, acc5, _ = test_logistic_regression(
+                opt, context_model, classification_model, test_loader
+            )
 
     except KeyboardInterrupt:
         print("Training got interrupted")
