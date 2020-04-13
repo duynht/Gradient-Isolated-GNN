@@ -74,13 +74,13 @@ def parse_general_args(parser):
         "otherwise saves logs according to time-stamp",
     )
     parser.add_option(
-        "--small-patching",
+        "--small_patching",
         default=False,
         action="store_true",
         help="Boolean to decide whether to split an image into <num_patches> patches"
     )
     parser.add_option(
-        "--use-simple-resnet",
+        "--use_simple_resnet",
         default=False,
         action="store_true",
         help="Boolean to decide whether to use a ResNet 50 as an encoder"
