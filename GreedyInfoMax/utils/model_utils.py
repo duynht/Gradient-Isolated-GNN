@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import os
+from collections import OrderedDict
 
 
 def distribute_over_GPUs(opt, model, num_GPU):
@@ -51,7 +52,7 @@ def makeDeltaOrthogonal(weights, gain):
         weights.mul_(gain)
 
 
-def reload_weights(opt, model, optimizer, reload_model):
+def reload_weights(opt, model, optimizer, reload_model, patch_idx=None):
     ## reload weights for training of the linear classifier
     if (opt.model_type == 0) and reload_model:  # or opt.model_type == 2)
         print("Loading weights from ", opt.model_path)
@@ -64,16 +65,35 @@ def reload_weights(opt, model, optimizer, reload_model):
                 )
             )
         else:
-            for idx, layer in enumerate(model.module.encoder):
-                model.module.encoder[idx].load_state_dict(
-                    torch.load(
-                        os.path.join(
-                            opt.model_path,
-                            "model_{}_{}.ckpt".format(idx, opt.model_num),
-                        ),
-                         map_location=opt.device.type,
+            # print("patch index in reload weights:", patch_idx)
+            if patch_idx == None:
+                for idx, layer in enumerate(model.module.encoder):
+                    model.module.encoder[idx].load_state_dict(
+                        torch.load(
+                            os.path.join(
+                                opt.model_path,
+                                "model_{}_{}.ckpt".format(idx, opt.model_num),
+                            ),
+                            map_location=opt.device.type,
+                        )
                     )
-                )
+            else:
+                for idx, layer in enumerate(model.module.encoder):
+                    try:
+                        state_dict = torch.load(
+                                    os.path.join(
+                                        opt.model_path,
+                                        "model_{}_{}_{}.ckpt".format(patch_idx, idx, opt.model_num),
+                                    ),
+                                    map_location=opt.device.type,
+                                )
+                        # new_state_dict = OrderedDict()
+                        # for k, v in state_dict.items():
+                        #     name = k[7:] # remove `module.` from the name
+                        #     new_state_dict[name] = v
+                        model.module.encoder[idx].load_state_dict(state_dict)
+                    except RuntimeError as e:
+                        print(e)
 
     ## reload weights and optimizers for continuing training
     elif opt.start_epoch > 0:
@@ -90,29 +110,52 @@ def reload_weights(opt, model, optimizer, reload_model):
                 strict=False,
             )
         else:
-            for idx, layer in enumerate(model.module.encoder):
-                model.module.encoder[idx].load_state_dict(
-                    torch.load(
-                        os.path.join(
-                            opt.model_path,
-                            "model_{}_{}.ckpt".format(idx, opt.start_epoch),
-                        ),
-                        map_location=opt.device.type,
+            if patch_idx == None:
+                for idx, layer in enumerate(model.module.encoder):
+                    model.module.encoder[idx].load_state_dict(
+                        torch.load(
+                            os.path.join(
+                                opt.model_path,
+                                "model_{}_{}.ckpt".format(idx, opt.start_epoch),
+                            ),
+                            map_location=opt.device.type,
+                        )
                     )
-                )
+            else:
+                for idx, layer in enumerate(model.module.encoder):
+                    model.module.encoder[idx].load_state_dict(
+                        torch.load(
+                            os.path.join(
+                                opt.model_path,
+                                "model_{}_{}_{}.ckpt".format(patch_idx, idx, opt.start_epoch),
+                            ),
+                            map_location=opt.device.type,
+                        )
+                    )
 
         for i, optim in enumerate(optimizer):
             if opt.model_splits > 3 and i > 2:
                 break
-            optim.load_state_dict(
-                torch.load(
-                    os.path.join(
-                        opt.model_path,
-                        "optim_{}_{}.ckpt".format(str(i), opt.start_epoch),
-                    ),
-                    map_location=opt.device.type,
+            if patch_idx == None:
+                optim.load_state_dict(
+                    torch.load(
+                        os.path.join(
+                            opt.model_path,
+                            "optim_{}_{}.ckpt".format(str(i), opt.start_epoch),
+                        ),
+                        map_location=opt.device.type,
+                    )
                 )
-            )
+            else:
+                optim.load_state_dict(
+                    torch.load(
+                        os.path.join(
+                            opt.model_path,
+                            "optim_{}_{}_{}.ckpt".format(patch_idx, str(i), opt.start_epoch),
+                        ),
+                        map_location=opt.device.type,
+                    )
+                )
     else:
         print("Randomly initialized model")
 

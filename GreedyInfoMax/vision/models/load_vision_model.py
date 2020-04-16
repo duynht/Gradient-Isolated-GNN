@@ -1,15 +1,15 @@
 import torch
 
-from GreedyInfoMax.vision.models import FullModel, ClassificationModel
+from GreedyInfoMax.vision.models import FullModel, ClassificationModel, SmallModel
 from GreedyInfoMax.utils import model_utils
 
 
-def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=True):
+def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=True, patch_idx=None):
+    # print("patch index in load_model_and_optimizer:", patch_idx)
 
     model = FullModel.FullVisionModel(
         opt, calc_loss
     )
-
     optimizer = []
     if opt.model_splits == 1:
         optimizer.append(
@@ -18,20 +18,22 @@ def load_model_and_optimizer(opt, num_GPU=None, reload_model=False, calc_loss=Tr
     elif opt.model_splits >= 3:
         # use separate optimizer for each module, so gradients don't get mixed up
         for idx, layer in enumerate(model.encoder):
-            optimizer.append(torch.optim.Adam(layer.parameters(), lr=opt.learning_rate))
+            optimizer.append(torch.optim.Adam(
+                layer.parameters(), lr=opt.learning_rate))
     else:
         raise NotImplementedError
 
-    model, num_GPU = model_utils.distribute_over_GPUs(opt, model, num_GPU=num_GPU)
+    model, num_GPU = model_utils.distribute_over_GPUs(
+        opt, model, num_GPU=num_GPU)
 
     model, optimizer = model_utils.reload_weights(
-        opt, model, optimizer, reload_model=reload_model
+        opt, model, optimizer, reload_model=reload_model, patch_idx=patch_idx
     )
 
     return model, optimizer
 
 
-def load_classification_model(opt):
+def load_classification_model(opt, avg_pooling_kernel_size = 7):
 
     if opt.resnet == 34:
         in_channels = 256
@@ -44,7 +46,7 @@ def load_classification_model(opt):
         raise Exception("Invalid option")
 
     classification_model = ClassificationModel.ClassificationModel(
-        in_channels=in_channels, num_classes=num_classes,
+        in_channels=in_channels, num_classes=num_classes, avg_pooling_kernel_size=avg_pooling_kernel_size
     ).to(opt.device)
 
     return classification_model

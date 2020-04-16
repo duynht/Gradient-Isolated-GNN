@@ -2,7 +2,7 @@
 
 We can train a neural network **without end-to-end backpropagation** and achieve competitive performance.
 
-This repo provides the code for the audio experiments in our paper:
+This repo provides the code for the experiments in our paper:
 
 Sindy Löwe*, Peter O'Connor, Bastiaan S. Veeling* - [Putting An End to End-to-End: Gradient-Isolated Learning of Representations](https://arxiv.org/abs/1905.11786)
 
@@ -106,7 +106,9 @@ Additionally, for the audio experiments:
     ```
     
 ## Want to learn more about Greedy InfoMax?
-Check out my [presentation at NeurIPS 2019](https://slideslive.com/38923276). My slides for this talk are available [here](media/Presentation_GreedyInfoMax_NeurIPS.pdf).
+Check out my [blog post](https://loewex.github.io/GreedyInfoMax.html) for an intuitive explanation of Greedy InfoMax. 
+
+Additionally, you can watch my [presentation at NeurIPS 2019](https://slideslive.com/38923276). My slides for this talk are available [here](media/Presentation_GreedyInfoMax_NeurIPS.pdf).
 
 
 ## Cite
