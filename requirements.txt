@@ -6,9 +6,10 @@ py-cpuinfo==5.0.0
 sacred==0.7.4
 tensorboardx==1.6
 toml==0.10.0
-torchaudio==0.4.0
+torchaudio -f https://download.pytorch.org/whl/torch_stable.html
 torchviz==0.0.1
-torch-geometric==1.4.3
-torch-scatter==2.0.4
-torch-sparse==0.6.1
-torch-cluster==1.5.4
+torch-geometric
+torch-scatter
+torch-sparse
+torch-cluster
+torch==1.4.0
