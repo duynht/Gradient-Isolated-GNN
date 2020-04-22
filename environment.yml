@@ -1,4 +1,4 @@
-name: infomax
+name: 
 channels:
   - pytorch
   - conda-forge
