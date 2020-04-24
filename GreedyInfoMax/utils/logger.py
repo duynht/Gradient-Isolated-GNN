@@ -52,14 +52,14 @@ class Logger:
         final_loss=None,
         acc5=None,
         classification_model=None,
-        component_idx=None
+        patch_idx=None
     ):
 
         print("Saving model and log-file to " + self.opt.log_path)
 
         # Save the model checkpoint
         if self.opt.experiment == "vision":
-            if component_idx == None:
+            if patch_idx == None:
                 for idx, layer in enumerate(model.module.encoder):
                     torch.save(
                         layer.state_dict(),
@@ -71,7 +71,7 @@ class Logger:
                     torch.save(
                         layer.state_dict(),
                         os.path.join(self.opt.log_path, "model_{}_{}_{}.ckpt".format(
-                            component_idx, idx, epoch)),
+                            patch_idx, idx, epoch)),
                     )
         else:
             torch.save(
@@ -83,7 +83,7 @@ class Logger:
         if (epoch - self.num_models_to_keep) % 10 != 0:
             try:
                 if self.opt.experiment == "vision":
-                    if component_idx == None:
+                    if patch_idx == None:
                         for idx, _ in enumerate(model.module.encoder):
                             os.remove(
                                 os.path.join(
@@ -98,7 +98,7 @@ class Logger:
                                 os.path.join(
                                     self.opt.log_path,
                                     "model_{}_{}_{}.ckpt".format(
-                                        component_idx, idx, epoch - self.num_models_to_keep),
+                                        patch_idx, idx, epoch - self.num_models_to_keep),
                                 )
                             )
                 else:
@@ -133,7 +133,7 @@ class Logger:
                 print("not enough models there yet, nothing to delete")
 
         if optimizer is not None:
-            if component_idx == None:
+            if patch_idx == None:
                 for idx, optims in enumerate(optimizer):
                     torch.save(
                         optims.state_dict(),
@@ -160,7 +160,7 @@ class Logger:
                         optims.state_dict(),
                         os.path.join(
                             self.opt.log_path, "optim_{}_{}_{}.ckpt".format(
-                                component_idx,
+                                patch_idx,
                                 idx,
                                 epoch
                             )
@@ -172,7 +172,7 @@ class Logger:
                         os.path.join(
                             self.opt.log_path,
                             "optim_{}_{}_{}.ckpt".format(
-                                component_idx,
+                                patch_idx,
                                 idx,
                                 epoch - self.num_models_to_keep
                             ),
