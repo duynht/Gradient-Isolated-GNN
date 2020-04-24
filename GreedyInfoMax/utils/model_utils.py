@@ -87,10 +87,6 @@ def reload_weights(opt, model, optimizer, reload_model, patch_idx=None):
                                     ),
                                     map_location=opt.device.type,
                                 )
-                        # new_state_dict = OrderedDict()
-                        # for k, v in state_dict.items():
-                        #     name = k[7:] # remove `module.` from the name
-                        #     new_state_dict[name] = v
                         model.module.encoder[idx].load_state_dict(state_dict)
                     except RuntimeError as e:
                         print(e)
@@ -122,16 +118,20 @@ def reload_weights(opt, model, optimizer, reload_model, patch_idx=None):
                         )
                     )
             else:
-                for idx, layer in enumerate(model.module.encoder):
-                    model.module.encoder[idx].load_state_dict(
-                        torch.load(
-                            os.path.join(
-                                opt.model_path,
-                                "model_{}_{}_{}.ckpt".format(patch_idx, idx, opt.start_epoch),
-                            ),
-                            map_location=opt.device.type,
+                try:
+                    for idx, layer in enumerate(model.module.encoder):
+                        model.module.encoder[idx].load_state_dict(
+                            torch.load(
+                                os.path.join(
+                                    opt.model_path,
+                                    "model_{}_{}_{}.ckpt".format(patch_idx, idx, opt.start_epoch),
+                                ),
+                                map_location=opt.device.type,
+                            )
                         )
-                    )
+                except RuntimeError as e:
+                    print(e)
+                
 
         for i, optim in enumerate(optimizer):
             if opt.model_splits > 3 and i > 2:
