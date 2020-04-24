@@ -53,20 +53,20 @@ def train(opt, models):
 
         for step, (full_img, label) in enumerate(train_loader):
 
-            # split each image in batch into 4 components
+            # split each image in batch into 4 patchs
             batch_size, num_channels, img_h, img_w = full_img.shape
-            components = []
-            # first component
-            components.append(full_img[:, :, :img_h//2, :img_w//2])
-            # second component
-            components.append(full_img[:, :, :img_h//2, img_w//2:])
-            # third component
-            components.append(full_img[:, :, img_h//2:, :img_w//2])
-            # fourth component
-            components.append(full_img[:, :, img_h//2:, img_w//2:])
+            patchs = []
+            # first patch
+            patchs.append(full_img[:, :, :img_h//2, :img_w//2])
+            # second patch
+            patchs.append(full_img[:, :, :img_h//2, img_w//2:])
+            # third patch
+            patchs.append(full_img[:, :, img_h//2:, :img_w//2])
+            # fourth patch
+            patchs.append(full_img[:, :, img_h//2:, img_w//2:])
 
-            for component_index in range(4):
-                img = components[component_index]
+            for patch_idx in range(4):
+                img = patchs[patch_idx]
                 if step % print_idx == 0:
                     print(
                         "Epoch [{}/{}], Step [{}/{}], Training Block: {}, Time (s): {:.1f}".format(
@@ -84,7 +84,7 @@ def train(opt, models):
                 model_input = img.to(opt.device)
                 label = label.to(opt.device)
 
-                loss, _, _, accuracy = models[component_index](model_input, label, n=cur_train_module)
+                loss, _, _, accuracy = models[patch_idx](model_input, label, n=cur_train_module)
                 loss = torch.mean(loss, 0) # take mean over outputs of different GPUs
                 accuracy = torch.mean(accuracy, 0)
 
@@ -96,13 +96,13 @@ def train(opt, models):
                     if len(loss) == 1 and opt.model_splits != 1:
                         idx = cur_train_module
 
-                    models[component_index].zero_grad()
+                    models[patch_idx].zero_grad()
 
                     if idx == len(loss) - 1:
                         cur_losses.backward()
                     else:
                         cur_losses.backward(retain_graph=True)
-                    optimizers[component_index][idx].step()
+                    optimizers[patch_idx][idx].step()
 
                     print_loss = cur_losses.item()
                     print_acc = accuracy[idx].item()
@@ -114,13 +114,13 @@ def train(opt, models):
                     loss_epoch[idx] += print_loss
                     loss_updates[idx] += 1
 
-        for component_index in range(4):
+        for patch_idx in range(4):
             if opt.validate:
-                validation_loss = validate(opt, models[component_index], test_loader) #test_loader corresponds to validation set here
+                validation_loss = validate(opt, models[patch_idx], test_loader) #test_loader corresponds to validation set here
                 logs.append_val_loss(validation_loss)
 
             logs.append_train_loss([x / loss_updates[idx] for idx, x in enumerate(loss_epoch)])
-            logs.create_log(models[component_index], epoch=epoch, optimizer=optimizers[component_index], component_idx=component_index)
+            logs.create_log(models[patch_idx], epoch=epoch, optimizer=optimizers[patch_idx], patch_idx=patch_idx)
 
 
 if __name__ == "__main__":
