@@ -39,7 +39,7 @@ class Logger:
             else:
                 self.val_loss = None
 
-        self.num_models_to_keep = 1
+        self.num_models_to_keep = 3
         assert self.num_models_to_keep > 0, "Dont delete all models!!!"
 
     def create_log(
@@ -155,18 +155,7 @@ class Logger:
                     except:
                         print("not enough models there yet, nothing to delete")
             else:
-                for idx, optims in enumerate(optimizer):
-                    torch.save(
-                        optims.state_dict(),
-                        os.path.join(
-                            self.opt.log_path, "optim_{}_{}_{}.ckpt".format(
-                                patch_idx,
-                                idx,
-                                epoch
-                            )
-                        ),
-                    )
-
+                
                 try:
                     os.remove(
                         os.path.join(
@@ -180,6 +169,18 @@ class Logger:
                     )
                 except:
                     print("not enough models there yet, nothing to delete")
+
+                for idx, optims in enumerate(optimizer):
+                    torch.save(
+                        optims.state_dict(),
+                        os.path.join(
+                            self.opt.log_path, "optim_{}_{}_{}.ckpt".format(
+                                patch_idx,
+                                idx,
+                                epoch
+                            )
+                        ),
+                    )
 
         # Save hyper-parameters
         with open(os.path.join(self.opt.log_path, "log.txt"), "w+") as cur_file:
