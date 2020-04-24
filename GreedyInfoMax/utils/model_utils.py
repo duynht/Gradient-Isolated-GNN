@@ -147,15 +147,18 @@ def reload_weights(opt, model, optimizer, reload_model, patch_idx=None):
                     )
                 )
             else:
-                optim.load_state_dict(
-                    torch.load(
-                        os.path.join(
-                            opt.model_path,
-                            "optim_{}_{}_{}.ckpt".format(patch_idx, str(i), opt.start_epoch),
-                        ),
-                        map_location=opt.device.type,
+                try:
+                    optim.load_state_dict(
+                        torch.load(
+                            os.path.join(
+                                opt.model_path,
+                                "optim_{}_{}_{}.ckpt".format(patch_idx, str(i), opt.start_epoch),
+                            ),
+                            map_location=opt.device.type,
+                        )
                     )
-                )
+                except RuntimeError as e:
+                    print(e)
     else:
         print("Randomly initialized model")
 
