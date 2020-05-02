@@ -15,11 +15,11 @@ def validate(opt, model, test_loader):
     loss_epoch = [0 for i in range(opt.model_splits)]
     starttime = time.time()
 
-    for step, sample in enumerate(train_loader):
+    for step, sample in enumerate(test_loader):
         if opt.dataset == "stl10":
-            img, label = sample
+            full_img, label = sample
         else:
-            img, label, desc = sample
+            full_img, label = sample['img'], sample['label']
         model_input = img.to(opt.device)
         label = label.to(opt.device)
 
@@ -58,7 +58,7 @@ def train(opt, models):
             if opt.dataset == "stl10":
                 full_img, label = sample
             else:
-                full_img, label, desc = sample
+                full_img, label = sample['img'], sample['label']
             # split each image in batch into 4 patchs
             batch_size, num_channels, img_h, img_w = full_img.shape
             patchs = []
