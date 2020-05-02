@@ -42,6 +42,8 @@ def load_classification_model(opt, avg_pooling_kernel_size = 7):
 
     if opt.dataset == "stl10":
         num_classes = 10
+    elif opt.dataset == "attribute-discovery":
+        num_classes = 4
     else:
         raise Exception("Invalid option")
 

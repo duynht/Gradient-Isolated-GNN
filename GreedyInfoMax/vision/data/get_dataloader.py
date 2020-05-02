@@ -171,20 +171,6 @@ def get_dataloader(opt):
         raise Exception("Invalid option")
 
 
-aug = {
-    "ad": {
-        "randcrop": 64,
-        "flip": True,
-        "grayscale": False,
-        # values for train+unsupervised combined
-        "mean": [0.4313, 0.4156, 0.3663],
-        "std": [0.2683, 0.2610, 0.2687],
-        "bw_mean": [0.4120],  # values for train+unsupervised combined
-        "bw_std": [0.2570],
-    }  # values for labeled train set: mean [0.4469, 0.4400, 0.4069], std [0.2603, 0.2566, 0.2713]
-}
-
-
 # def get_transforms(eval=False, aug=None):
 #     trans = []
 
@@ -216,6 +202,17 @@ def get_stl10_dataloader(opt):
     base_folder = os.path.join(opt.data_input_dir, "stl10_binary")
 
     aug = {
+        "ad": {
+            "randcrop": 224,
+            "flip": True,
+            "grayscale": False,
+            # values for train+unsupervised combined
+            "mean": [0.4313, 0.4156, 0.3663],
+            "std": [0.2683, 0.2610, 0.2687],
+            "bw_mean": [0.4120],  # values for train+unsupervised combined
+            "bw_std": [0.2570],
+        },  # values for labeled train set: mean [0.4469, 0.4400, 0.4069], std [0.2603, 0.2566, 0.2713]
+
         "stl10": {
             "randcrop": 64,
             "flip": True,
