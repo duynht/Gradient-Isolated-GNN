@@ -131,6 +131,19 @@ def get_dataloader(opt):
         print(df.info())
         print(df.head())
 
+        aug = {
+            "stl10": {
+                "randcrop": 64,
+                "flip": True,
+                "grayscale": opt.grayscale,
+                # values for train+unsupervised combined
+                "mean": [0.4313, 0.4156, 0.3663],
+                "std": [0.2683, 0.2610, 0.2687],
+                "bw_mean": [0.4120],  # values for train+unsupervised combined
+                "bw_std": [0.2570],
+            }  # values for labeled train set: mean [0.4469, 0.4400, 0.4069], std [0.2603, 0.2566, 0.2713]
+        }
+
         dataset = AttributeDiscoveryDataset(
             df, transform=get_transforms(eval=False, aug=aug['ad']))
         batch_size = 32
@@ -203,20 +216,9 @@ def get_stl10_dataloader(opt):
 
     aug = {
         "ad": {
-            "randcrop": 224,
-            "flip": True,
-            "grayscale": False,
-            # values for train+unsupervised combined
-            "mean": [0.4313, 0.4156, 0.3663],
-            "std": [0.2683, 0.2610, 0.2687],
-            "bw_mean": [0.4120],  # values for train+unsupervised combined
-            "bw_std": [0.2570],
-        },  # values for labeled train set: mean [0.4469, 0.4400, 0.4069], std [0.2603, 0.2566, 0.2713]
-
-        "stl10": {
             "randcrop": 64,
             "flip": True,
-            "grayscale": opt.grayscale,
+            "grayscale": False,
             # values for train+unsupervised combined
             "mean": [0.4313, 0.4156, 0.3663],
             "std": [0.2683, 0.2610, 0.2687],
