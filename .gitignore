@@ -30,3 +30,4 @@ datasets/
 
 # Plasma desktop
 .directory
+.vscode/
