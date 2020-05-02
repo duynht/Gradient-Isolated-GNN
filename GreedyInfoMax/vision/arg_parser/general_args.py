@@ -1,5 +1,11 @@
 def parse_general_args(parser):
     parser.add_option(
+        "--grid_dims",
+        type="int",
+        default = 1,
+        help="Vision GNN experiments square grid dimensions"
+    )
+    parser.add_option(
         "--experiment",
         type="string",
         default="vision",

@@ -38,13 +38,15 @@ def validate(opt, model, test_loader):
 
 def train(opt, models):
     total_step = len(train_loader)
-    for i in range(4):
+    for i in range(8):
         models[i].module.switch_calc_loss(True)
 
     print_idx = 100
 
     starttime = time.time()
     cur_train_module = opt.train_module
+
+    num_patches = opt.grid_dims * opt.grid_dims
 
     for epoch in range(opt.start_epoch, opt.num_epochs + opt.start_epoch):
 
@@ -53,19 +55,16 @@ def train(opt, models):
 
         for step, (full_img, label) in enumerate(train_loader):
 
-            # split each image in batch into 4 components
+            # split normalized images
             batch_size, num_channels, img_h, img_w = full_img.shape
             components = []
-            # first component
-            components.append(full_img[:, :, :img_h//2, :img_w//2])
-            # second component
-            components.append(full_img[:, :, :img_h//2, img_w//2:])
-            # third component
-            components.append(full_img[:, :, img_h//2:, :img_w//2])
-            # fourth component
-            components.append(full_img[:, :, img_h//2:, img_w//2:])
+            step_h = img_h // opt.grid_dims
+            step_w = img_h // opt.grid_dims
+            for height in range(0, img_h, step_h):
+                for width in range(0, img_w, step_w):
+                    patches.append(full_img[:, :, height:heigth+step_h, width:width+step_w])  
 
-            for component_index in range(4):
+            for component_index in range(num_patches):
                 img = components[component_index]
                 if step % print_idx == 0:
                     print(
@@ -114,7 +113,7 @@ def train(opt, models):
                     loss_epoch[idx] += print_loss
                     loss_updates[idx] += 1
 
-        for component_index in range(4):
+        for component_index in range(8):
             if opt.validate:
                 validation_loss = validate(opt, models[component_index], test_loader) #test_loader corresponds to validation set here
                 logs.append_val_loss(validation_loss)
@@ -137,9 +136,11 @@ if __name__ == "__main__":
     if opt.device.type != "cpu":
         torch.backends.cudnn.benchmark = True
 
+    num_patches = opt.grid_dims
+
     # load model
-    models, optimizers = [None for i in range(4)], [None for i in range(4)]
-    for i in range(4):
+    models, optimizers = [None for i in range(num_patches)], [None for i in range(num_patches)]
+    for i in range(num_patches):
         models[i], optimizers[i] = load_vision_model.load_model_and_optimizer(opt)
 
     logs = logger.Logger(opt)

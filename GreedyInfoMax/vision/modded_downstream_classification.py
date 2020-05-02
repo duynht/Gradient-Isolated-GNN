@@ -17,6 +17,8 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
 
     starttime = time.time()
 
+    num_patches = opt.grid_dims * opt.grid_dims
+
     for epoch in range(opt.num_epochs):
         epoch_acc1 = 0
         epoch_acc5 = 0
@@ -28,22 +30,19 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
 
             batch_size, num_channels, img_h, img_w = full_img.shape
             patches = []
-            # first patch
-            patches.append(full_img[:, :, :img_h//2, :img_w//2])
-            # second patch
-            patches.append(full_img[:, :, :img_h//2, img_w//2:])
-            # third patch
-            patches.append(full_img[:, :, img_h//2:, :img_w//2])
-            # fourth patch
-            patches.append(full_img[:, :, img_h//2:, img_w//2:])
+            step_h = img_h // opt.grid_dims
+            step_w = img_h // opt.grid_dims
+            for height in range(0, img_h, step_h):
+                for width in range(0, img_w, step_w):
+                    patches.append(full_img[:, :, height:heigth+step_h, width:width+step_w])    
 
             model_inputs = []
-            for patch_idx in range(4):
+            for patch_idx in range(num_patches):
                 model_inputs.append(patches[patch_idx].to(opt.device))
 
             with torch.no_grad():
                 z = None
-                for patch_idx in range(4):
+                for patch_idx in range(num_patches):
                     if not opt.use_simple_resnet:
                         _, _, patch_z, _ = context_model(
                             model_inputs[patch_idx], target)
@@ -54,7 +53,7 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
                         z.to(opt.device)
                     else:
                         z += patch_z
-                z /= 4
+                z /= num_patches # normalization
             z = z.detach()  # double security that no gradients go to representation learning part of model
             # print(z.shape)
             # z = torch.mean(torch.mean(z, -1, True), -2, True)
@@ -121,25 +120,25 @@ def test_logistic_regression(opt, context_model, classification_model, test_load
     epoch_acc1 = 0
     epoch_acc5 = 0
 
+    num_patches = opt.grid_dims * opt.grid_dims
+
     for step, (full_img, target) in enumerate(test_loader):
 
         batch_size, num_channels, img_h, img_w = full_img.shape
         patches = []
-        # first patch
-        patches.append(full_img[:, :, :img_h//2, :img_w//2])
-        # second patch
-        patches.append(full_img[:, :, :img_h//2, img_w//2:])
-        # third patch
-        patches.append(full_img[:, :, img_h//2:, :img_w//2])
-        # fourth patch
-        patches.append(full_img[:, :, img_h//2:, img_w//2:])
+        step_h = img_h // opt.grid_dims
+        step_w = img_h // opt.grid_dims
+        for height in range(0, img_h, step_h):
+            for width in range(0, img_w, step_w):
+                patches.append(full_img[:, :, height:heigth+step_h, width:width+step_w])  
+
         model_inputs = []
-        for patch_idx in range(4):
+        for patch_idx in range(num_patches):
             model_inputs.append(patches[patch_idx].to(opt.device))
 
         with torch.no_grad():
             z = None
-            for patch_idx in range(4):
+            for patch_idx in range(num_patches):
                 if not opt.use_simple_resnet:
                     _, _, patch_z, _ = context_model(
                         model_inputs[patch_idx], target)
@@ -150,7 +149,7 @@ def test_logistic_regression(opt, context_model, classification_model, test_load
                     z.to(opt.device)
                 else:
                     z += patch_z
-            z /= 4
+            z /= 8
 
         z = z.detach()  # double security that no gradients go to representation learning part of model
         # z = torch.mean(torch.mean(z, -1, True), -1, True)
@@ -188,6 +187,8 @@ if __name__ == "__main__":
     arg_parser.create_log_path(opt, add_path_var=add_path_var)
     opt.training_dataset = "train"
 
+    num_patches = opt.grid_dims * opt.grid_dims
+
     # random seeds
     torch.manual_seed(opt.seed)
     torch.cuda.manual_seed(opt.seed)
@@ -197,7 +198,7 @@ if __name__ == "__main__":
     context_models = []
 
     if not opt.use_simple_resnet:
-        for patch_idx in range(4):
+        for patch_idx in range(num_patches):
             context_model, _ = load_vision_model.load_model_and_optimizer(
                 opt, reload_model=True, calc_loss=False, patch_idx=patch_idx
             )
@@ -206,7 +207,7 @@ if __name__ == "__main__":
             
         # model_type=2 is supervised model which trains entire architecture; otherwise just extract features
         if opt.model_type != 2:
-            for i in range(4):
+            for i in range(num_patches):
                 context_models[i].eval()
     else:
         context_models.append(SmallModel.ResNetModel(opt))
