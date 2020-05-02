@@ -34,7 +34,7 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
             step_w = img_h // opt.grid_dims
             for height in range(0, img_h, step_h):
                 for width in range(0, img_w, step_w):
-                    patches.append(full_img[:, :, height:heigth+step_h, width:width+step_w])    
+                    patches.append(full_img[:, :, height:height+step_h, width:width+step_w])    
 
             model_inputs = []
             for patch_idx in range(num_patches):
@@ -130,7 +130,7 @@ def test_logistic_regression(opt, context_model, classification_model, test_load
         step_w = img_h // opt.grid_dims
         for height in range(0, img_h, step_h):
             for width in range(0, img_w, step_w):
-                patches.append(full_img[:, :, height:heigth+step_h, width:width+step_w])  
+                patches.append(full_img[:, :, height:height+step_h, width:width+step_w])  
 
         model_inputs = []
         for patch_idx in range(num_patches):

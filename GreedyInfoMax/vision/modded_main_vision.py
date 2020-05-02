@@ -38,7 +38,7 @@ def validate(opt, model, test_loader):
 
 def train(opt, models):
     num_patches = opt.grid_dims * opt.grid_dims
-    
+
     total_step = len(train_loader)
     for i in range(num_patches):
         models[i].module.switch_calc_loss(True)
@@ -62,7 +62,7 @@ def train(opt, models):
             step_w = img_h // opt.grid_dims
             for height in range(0, img_h, step_h):
                 for width in range(0, img_w, step_w):
-                    patches.append(full_img[:, :, height:heigth+step_h, width:width+step_w])  
+                    components.append(full_img[:, :, height:height+step_h, width:width+step_w])  
 
             for component_index in range(num_patches):
                 img = components[component_index]
