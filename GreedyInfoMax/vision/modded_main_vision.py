@@ -37,16 +37,16 @@ def validate(opt, model, test_loader):
 
 
 def train(opt, models):
+    num_patches = opt.grid_dims * opt.grid_dims
+    
     total_step = len(train_loader)
-    for i in range(8):
+    for i in range(num_patches):
         models[i].module.switch_calc_loss(True)
 
     print_idx = 100
 
     starttime = time.time()
     cur_train_module = opt.train_module
-
-    num_patches = opt.grid_dims * opt.grid_dims
 
     for epoch in range(opt.start_epoch, opt.num_epochs + opt.start_epoch):
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     if opt.device.type != "cpu":
         torch.backends.cudnn.benchmark = True
 
-    num_patches = opt.grid_dims
+    num_patches = opt.grid_dims * opt.grid_dims
 
     # load model
     models, optimizers = [None for i in range(num_patches)], [None for i in range(num_patches)]
