@@ -30,6 +30,7 @@ class AttributeDiscoveryDataset(Dataset):
         self.path_df = path_df
         self.root_dir = root_dir
         self.transform = transform
+        self.opt = opt
 
     def __len__(self):
         return len(self.path_df.index)
@@ -45,7 +46,7 @@ class AttributeDiscoveryDataset(Dataset):
             image = image.convert("RGB")
         label = self.path_df.iloc[idx, 1]
         desc_path = self.path_df.iloc[idx, 2]
-        if opt.load_descr:
+        if self.opt.load_descr:
             with open(desc_path, 'r') as file:
                 desc = ''.join(file.read())
         sample = {'img': image, 'desc': desc, 'label': label}
