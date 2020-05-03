@@ -19,7 +19,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 
 
 class AttributeDiscoveryDataset(Dataset):
-    def __init__(self, path_df, root_dir=None, transform=None):
+    def __init__(self, path_df, root_dir=None, transform=None, opt=None):
         """
         Args:
             path_df (string): The DataFrame with all paths.
@@ -45,8 +45,9 @@ class AttributeDiscoveryDataset(Dataset):
             image = image.convert("RGB")
         label = self.path_df.iloc[idx, 1]
         desc_path = self.path_df.iloc[idx, 2]
-        with open(desc_path, 'r') as file:
-            desc = ''.join(file.read())
+        if opt.load_descr:
+            with open(desc_path, 'r') as file:
+                desc = ''.join(file.read())
         sample = {'img': image, 'desc': desc, 'label': label}
 
         if self.transform:
@@ -126,9 +127,8 @@ def get_dataloader(opt):
             desc_path = desc_path[:-3] + 'txt'
             return desc_path
 
-        if opt.load_descr:
-            df['desc_path'] = df.apply(
-                lambda row: img_path_to_desc_path(row['img_path']), axis=1)
+        df['desc_path'] = df.apply(
+            lambda row: img_path_to_desc_path(row['img_path']), axis=1)
         print(df.info())
         print(df.head())
 
@@ -146,7 +146,7 @@ def get_dataloader(opt):
         }
 
         dataset = AttributeDiscoveryDataset(
-            df, transform=get_transforms(eval=False, aug=aug['ad'], dataset="attribute-discovery"))
+            df, transform=get_transforms(eval=False, aug=aug['ad'], dataset="attribute-discovery", opt=opt))
         batch_size = opt.batch_size
         test_split = .5
         shuffle_dataset = True
