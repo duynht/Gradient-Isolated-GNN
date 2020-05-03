@@ -26,8 +26,10 @@ class FullVisionModel(torch.nn.Module):
 
         block_dims = [3, 4, 6, 6, 6, 6, 6]
         if opt.dataset == "attribute-discovery":
-            num_channels = [224, 128, 256, 256, 256, 256, 256]
+            print("Using channels for attribute-discovery")
+            num_channels = [256, 256, 256, 256, 256, 256, 256]
         else:
+            print("Using channels for stl10")
             num_channels = [64, 128, 256, 256, 256, 256, 256]
 
         full_model = nn.ModuleList([])
