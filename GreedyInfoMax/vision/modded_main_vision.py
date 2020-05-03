@@ -113,7 +113,7 @@ def train(opt, models):
                     loss_epoch[idx] += print_loss
                     loss_updates[idx] += 1
 
-        for component_index in range(8):
+        for component_index in range(num_patches):
             if opt.validate:
                 validation_loss = validate(opt, models[component_index], test_loader) #test_loader corresponds to validation set here
                 logs.append_val_loss(validation_loss)
