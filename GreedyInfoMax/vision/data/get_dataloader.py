@@ -126,8 +126,9 @@ def get_dataloader(opt):
             desc_path = desc_path[:-3] + 'txt'
             return desc_path
 
-        df['desc_path'] = df.apply(
-            lambda row: img_path_to_desc_path(row['img_path']), axis=1)
+        if opt.load_descr:
+            df['desc_path'] = df.apply(
+                lambda row: img_path_to_desc_path(row['img_path']), axis=1)
         print(df.info())
         print(df.head())
 

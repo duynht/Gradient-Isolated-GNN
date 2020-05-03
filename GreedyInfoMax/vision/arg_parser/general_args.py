@@ -85,4 +85,10 @@ def parse_general_args(parser):
         action="store_true",
         help="Boolean to decide whether to use a ResNet 50 as an encoder"
     )
+    parser.add_option(
+        "--load_descr",
+        action="store_true",
+        default=False,
+        help="Boolean to decide whether to load description text into dataset",
+    )
     return parser
