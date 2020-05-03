@@ -49,7 +49,9 @@ class AttributeDiscoveryDataset(Dataset):
         if self.opt.load_descr:
             with open(desc_path, 'r') as file:
                 desc = ''.join(file.read())
-        sample = {'img': image, 'desc': desc, 'label': label}
+            sample = {'img': image, 'desc': desc, 'label': label}
+        else:
+            sample = {'img': image, 'label': label}
 
         if self.transform:
             sample['img'] = self.transform(sample['img'])
