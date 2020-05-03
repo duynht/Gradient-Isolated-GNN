@@ -133,7 +133,7 @@ def get_dataloader(opt):
 
         aug = {
             "ad": {
-            "randcrop": 64,
+            "randcrop": 224,
             "flip": True,
             "grayscale": False,
             # values for train+unsupervised combined
@@ -145,7 +145,7 @@ def get_dataloader(opt):
         }
 
         dataset = AttributeDiscoveryDataset(
-            df, transform=get_transforms(eval=False, aug=aug['ad']))
+            df, transform=get_transforms(eval=False, aug=aug['ad'], dataset="attribute-discovery"))
         batch_size = 32
         test_split = .5
         shuffle_dataset = True
