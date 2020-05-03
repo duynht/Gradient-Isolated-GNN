@@ -17,9 +17,9 @@ def validate(opt, model, test_loader):
 
     for step, sample in enumerate(test_loader):
         if opt.dataset == "stl10":
-            full_img, label = sample
+            img, label = sample
         else:
-            full_img, label = sample['img'], sample['label']
+            img, label = sample['img'], sample['label']
         model_input = img.to(opt.device)
         label = label.to(opt.device)
 

@@ -141,10 +141,10 @@ def get_dataloader(opt):
             "flip": True,
             "grayscale": False,
             # values for train+unsupervised combined
-            "mean": [0.4313, 0.4156, 0.3663],
-            "std": [0.2683, 0.2610, 0.2687],
-            "bw_mean": [0.4120],  # values for train+unsupervised combined
-            "bw_std": [0.2570],
+            "mean": [0.7878, 0.7665, 0.7544],
+            "std": [0.1576, 0.1687, 0.1752],
+            "bw_mean": [0.7714],  # values for train+unsupervised combined
+            "bw_std": [0.0150],
         }  # values for labeled train set: mean [0.4469, 0.4400, 0.4069], std [0.2603, 0.2566, 0.2713]
         }
 
@@ -186,33 +186,6 @@ def get_dataloader(opt):
         )
     else:
         raise Exception("Invalid option")
-
-
-# def get_transforms(eval=False, aug=None):
-#     trans = []
-
-#     if aug["randcrop"] and not eval:
-#         trans.append(transforms.RandomCrop(aug["randcrop"]))
-
-#     if aug["randcrop"] and eval:
-#         trans.append(transforms.CenterCrop(aug["randcrop"]))
-
-#     if aug["flip"] and not eval:
-#         trans.append(transforms.RandomHorizontalFlip())
-
-#     trans.append(transforms.ToTensor())
-#     # if aug["grayscale"]:
-#     #     trans.append(transforms.Grayscale())
-#     #     trans.append(transforms.ToTensor())
-#     #     trans.append(transforms.Normalize(mean=aug["bw_mean"], std=aug["bw_std"]))
-#     # elif aug["mean"]:
-#     #     trans.append(transforms.ToTensor())
-#     #     trans.append(transforms.Normalize(mean=aug["mean"], std=aug["std"]))
-#     # else:
-#     #     trans.append(transforms.ToTensor())
-
-#     trans = transforms.Compose(trans)
-#     return trans
 
 
 def get_stl10_dataloader(opt):
@@ -357,18 +330,15 @@ def get_transforms(eval=False, aug=None, dataset="stl10"):
     if aug["flip"] and not eval:
         trans.append(transforms.RandomHorizontalFlip())
 
-    if dataset == "stl10":
-        if aug["grayscale"]:
-            trans.append(transforms.Grayscale())
-            trans.append(transforms.ToTensor())
-            trans.append(transforms.Normalize(
-                mean=aug["bw_mean"], std=aug["bw_std"]))
-        elif aug["mean"]:
-            trans.append(transforms.ToTensor())
-            trans.append(transforms.Normalize(
-                mean=aug["mean"], std=aug["std"]))
-        else:
-            trans.append(transforms.ToTensor())
+    if aug["grayscale"]:
+        trans.append(transforms.Grayscale())
+        trans.append(transforms.ToTensor())
+        trans.append(transforms.Normalize(
+            mean=aug["bw_mean"], std=aug["bw_std"]))
+    elif aug["mean"]:
+        trans.append(transforms.ToTensor())
+        trans.append(transforms.Normalize(
+            mean=aug["mean"], std=aug["std"]))
     else:
         trans.append(transforms.ToTensor())
 
