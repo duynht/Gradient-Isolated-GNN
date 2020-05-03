@@ -147,7 +147,7 @@ def get_dataloader(opt):
 
         dataset = AttributeDiscoveryDataset(
             df, transform=get_transforms(eval=False, aug=aug['ad'], dataset="attribute-discovery"))
-        batch_size = 32
+        batch_size = opt.batch_size
         test_split = .5
         shuffle_dataset = True
         random_seed = 42
