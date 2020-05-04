@@ -55,6 +55,7 @@ def train(opt, models):
         loss_updates = [1 for i in range(opt.model_splits)]
 
         for step, sample in enumerate(train_loader):
+            batch_start_time = time.time()
             if opt.dataset == "stl10":
                 full_img, label = sample
             else:
@@ -75,13 +76,14 @@ def train(opt, models):
                 img = patchs[patch_idx]
                 if step % print_idx == 0:
                     print(
-                        "Epoch [{}/{}], Step [{}/{}], Training Block: {}, Time (s): {:.1f}".format(
+                        "Epoch [{}/{}], Step [{}/{}], Training Block: {}, Time (s): {:.1f}, Patch index: {}".format(
                             epoch + 1,
                             opt.num_epochs + opt.start_epoch,
                             step,
                             total_step,
                             cur_train_module,
                             time.time() - starttime,
+                            patch_idx
                         )
                     )
 
@@ -119,6 +121,7 @@ def train(opt, models):
 
                     loss_epoch[idx] += print_loss
                     loss_updates[idx] += 1
+            print("Time of current batch: {}", time.time() - batch_start_time)
 
         for patch_idx in range(4):
             if opt.validate:
