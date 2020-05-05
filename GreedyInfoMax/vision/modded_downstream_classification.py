@@ -75,23 +75,23 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
             optimizer.step()
 
             # calculate accuracy
-            acc1, acc5 = utils.accuracy(prediction.data, target, topk=(1, 5))
+            acc1, acc3 = utils.accuracy(prediction.data, target, topk=(1, 3))
             epoch_acc1 += acc1
-            epoch_acc5 += acc5
+            epoch_acc3 += acc3
 
             sample_loss = loss.item()
             loss_epoch += sample_loss
 
             if step % 10 == 0:
                 print(
-                    "Epoch [{}/{}], Step [{}/{}], Time (s): {:.1f}, Acc1: {:.4f}, Acc5: {:.4f}, Loss: {:.4f}".format(
+                    "Epoch [{}/{}], Step [{}/{}], Time (s): {:.1f}, Acc1: {:.4f}, Acc3: {:.4f}, Loss: {:.4f}".format(
                         epoch + 1,
                         opt.num_epochs,
                         step,
                         total_step,
                         time.time() - starttime,
                         acc1,
-                        acc5,
+                        acc3,
                         sample_loss,
                     )
                 )
