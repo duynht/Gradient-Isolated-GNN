@@ -37,13 +37,13 @@ class ClassificationModel(torch.nn.Module):
 
 
 class FusionClassificationModel(torch.nn.Module):
-    def __init__(self, num_classes=200, output_dim=1, word_vector_size = 3300):
+    def __init__(self, num_classes=200, vision_output_dim=1, final_vision_vector_size=1024, word_vector_size=3300):
         super().__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d((output_dim, output_dim))
+        self.avg_pool = nn.AdaptiveAvgPool2d((vision_output_dim, vision_output_dim))
         self.model = nn.Sequential()
         
         self.model.add_module(
-            "layer1", nn.Linear(output_dim * output_dim + word_vector_size, num_classes, bias=True)
+            "layer1", nn.Linear(final_vision_vector_size + word_vector_size, num_classes, bias=True)
         )
 
         print(self.model)
