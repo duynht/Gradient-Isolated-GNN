@@ -19,7 +19,7 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
 
     for epoch in range(opt.num_epochs):
         epoch_acc1 = 0
-        epoch_acc5 = 0
+        epoch_acc3 = 0
 
         loss_epoch = 0
         for step, batch in enumerate(train_loader):
@@ -111,7 +111,7 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
             epoch=epoch,
             classification_model=classification_model,
             accuracy=epoch_acc1 / total_step,
-            acc5=epoch_acc5 / total_step,
+            acc5=epoch_acc3 / total_step,
         )
 
 
