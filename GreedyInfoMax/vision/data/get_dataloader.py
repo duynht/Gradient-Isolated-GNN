@@ -16,10 +16,13 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 from PIL import Image
 from torch.utils.data.sampler import SubsetRandomSampler
+from nltk.tokenize import word_tokenize
+import string
+from gensim.models.fasttext import FastText
 
 
 class AttributeDiscoveryDataset(Dataset):
-    def __init__(self, path_df, root_dir=None, transform=None, opt=None):
+    def __init__(self, path_df, root_dir=None, transform=None, opt=None, word_embed_path="/content/drive/My Drive/Multimodal-Greedy-InfoMax/ad-fasttext.model", word_embed_length=100):
         """
         Args:
             path_df (string): The DataFrame with all paths.
@@ -30,8 +33,8 @@ class AttributeDiscoveryDataset(Dataset):
         self.path_df = path_df
         self.root_dir = root_dir
         self.transform = transform
-        self.opt = opt
-
+        self.word_embed = FastText.load(word_embed_path)
+        self.word_embed_length = word_embed_length
     def __len__(self):
         return len(self.path_df.index)
 
@@ -46,17 +49,44 @@ class AttributeDiscoveryDataset(Dataset):
             image = image.convert("RGB")
         label = self.path_df.iloc[idx, 1]
         desc_path = self.path_df.iloc[idx, 2]
-        if self.opt.load_descr:
-            with open(desc_path, 'r') as file:
-                desc = ''.join(file.read())
-            sample = {'img': image, 'desc': desc, 'label': label}
-        else:
-            sample = {'img': image, 'label': label}
+        with open(desc_path, 'r') as file:
+            desc = ''.join(file.read())
+            desc = self.preprocessing(desc)
+            new_desc = []
+            for token in desc:
+                try:
+                    wv = self.word_embed[token]
+                except KeyError as e:
+                    print(e)
+                    wv = np.zeros(self.word_embed_length).astype(np.float64)
+                new_desc.append(wv)
+            desc = new_desc
+            if len(desc) >= 33:
+                desc = np.array(desc[:33])
+            else:
+                num_pads = 33 - len(desc)
+                desc.extend([np.zeros(self.word_embed_length).astype(np.float64) for i in range(num_pads)])
+            desc = np.asarray(desc)
+            desc = desc.ravel()
+            desc = torch.from_numpy(desc).double()
+        # print(desc.shape)
+        sample = {'img': image, 'desc': desc, 'label': label}
 
         if self.transform:
             sample['img'] = self.transform(sample['img'])
-
         return sample
+
+    def preprocessing(self, text):
+        # tokenize
+        tokens = word_tokenize(text)
+        # remove uppercase
+        tokens = [t.lower() for t in tokens]
+        # remove punctuation from tokens
+        table = str.maketrans('', '', string.punctuation)
+        tokens = [t.translate(table) for t in tokens]
+        # remove tokens not alphanumeric
+        tokens = [t for t in tokens if t.isalpha()]
+        return tokens
 
 
 def get_dataloader(opt):
@@ -118,9 +148,13 @@ def get_dataloader(opt):
         for i in range(4):
             for img_path in img_paths[i]:
                 img_label_list.append([img_path, i])
+        unsup_img_label_list = []
         for img_path in unsupervised:
-            img_label_list.append([img_path, 4])
+            unsup_img_label_list.append([img_path, 4])
+
         df = pd.DataFrame(img_label_list, columns=['img_path', 'label'])
+        unsup_df = pd.DataFrame(unsup_img_label_list,
+                                columns=['img_path', 'label'])
 
         def img_path_to_desc_path(img_path):
             img_name = img_path.split('/')[-1]
@@ -132,31 +166,16 @@ def get_dataloader(opt):
 
         df['desc_path'] = df.apply(
             lambda row: img_path_to_desc_path(row['img_path']), axis=1)
-        print(df.info())
-        print(df.head())
+        unsup_df['desc_path'] = unsup_df.apply(
+            lambda row: img_path_to_desc_path(row['img_path']), axis=1)
 
-        aug = {
-            "ad": {
-            "randcrop": 224,
-            "flip": True,
-            "grayscale": False,
-            # values for train+unsupervised combined
-            "mean": [0.7878, 0.7665, 0.7544],
-            "std": [0.1576, 0.1687, 0.1752],
-            "bw_mean": [0.7714],  # values for train+unsupervised combined
-            "bw_std": [0.0150],
-        }  # values for labeled train set: mean [0.4469, 0.4400, 0.4069], std [0.2603, 0.2566, 0.2713]
-        }
-
-        dataset = AttributeDiscoveryDataset(
-            df, transform=get_transforms(eval=False, aug=aug['ad'], dataset="attribute-discovery"), opt=opt)
+        # split supvervised dataset into supervised/test
         batch_size = opt.batch_size
         test_split = .5
         shuffle_dataset = True
         random_seed = 42
-
-        dataset_size = len(dataset) - len(unsupervised)
-        print(dataset_size)
+        dataset_size = len(df)
+        print("Supervised dataset size:", dataset_size)
         indices = list(range(dataset_size))
         first_split = int(np.floor(test_split * dataset_size))
         if shuffle_dataset:
@@ -164,25 +183,45 @@ def get_dataloader(opt):
             np.random.shuffle(indices)
         test_indices, supervised_indices = indices[:
                                                    first_split], indices[first_split:]
-        train_indices = [i + dataset_size for i in range(len(unsupervised))]
-        print(len(test_indices), len(supervised_indices), len(train_indices))
+        supervised_df = df.iloc[supervised_indices]
+        test_df = df.iloc[test_indices]
 
-        train_sampler = SubsetRandomSampler(train_indices)
-        supervised_sampler = SubsetRandomSampler(supervised_indices)
-        test_sampler = SubsetRandomSampler(test_indices)
+        aug = {
+            "ad": {
+                "randcrop": 224,
+                "flip": True,
+                "grayscale": False,
+                # values for unsupervised
+                "mean": [0.7939, 0.7734, 0.7619],
+                "std": [0.02428, 0.2629, 0.2740],
+                "bw_mean": [0.7765],  # values for unsupervised + train
+                "bw_std": [0.0227],
+            }
+        }
+
+        supervised_dataset = AttributeDiscoveryDataset(
+            supervised_df, transform=get_transforms(eval=False, aug=aug['ad']), opt=opt)
+        test_dataset = AttributeDiscoveryDataset(
+            test_df, transform=get_transforms(eval=True, aug=aug['ad']), opt=opt)
+        train_dataset = AttributeDiscoveryDataset(
+            unsup_df, transform=get_transforms(eval=False, aug=aug['ad']), opt=opt)
+
+        # train_sampler = SubsetRandomSampler(train_indices)
+        # supervised_sampler = SubsetRandomSampler(supervised_indices)
+        # test_sampler = SubsetRandomSampler(test_indices)
         train_loader = DataLoader(
-            dataset, batch_size=batch_size, sampler=train_sampler)
+            train_dataset, batch_size=batch_size)
         supervised_loader = DataLoader(
-            dataset, batch_size=batch_size, sampler=supervised_sampler)
+            supervised_dataset, batch_size=batch_size)
         test_loader = DataLoader(
-            dataset, batch_size=batch_size, sampler=test_sampler)
+            test_dataset, batch_size=batch_size)
         return (
             train_loader,
-            dataset,
+            train_dataset,
             supervised_loader,
-            None,
+            supervised_dataset,
             test_loader,
-            None,
+            test_dataset,
         )
     else:
         raise Exception("Invalid option")
@@ -193,15 +232,15 @@ def get_stl10_dataloader(opt):
 
     aug = {
         "stl10": {
-                "randcrop": 64,
-                "flip": True,
-                "grayscale": opt.grayscale,
-                # values for train+unsupervised combined
-                "mean": [0.4313, 0.4156, 0.3663],
-                "std": [0.2683, 0.2610, 0.2687],
-                "bw_mean": [0.4120],  # values for train+unsupervised combined
-                "bw_std": [0.2570],
-            }  # values for labeled train set: mean [0.4469, 0.4400, 0.4069], std [0.2603, 0.2566, 0.2713]
+            "randcrop": 64,
+            "flip": True,
+            "grayscale": opt.grayscale,
+            # values for train+unsupervised combined
+            "mean": [0.4313, 0.4156, 0.3663],
+            "std": [0.2683, 0.2610, 0.2687],
+            "bw_mean": [0.4120],  # values for train+unsupervised combined
+            "bw_std": [0.2570],
+        }  # values for labeled train set: mean [0.4469, 0.4400, 0.4069], std [0.2603, 0.2566, 0.2713]
     }
     transform_train = transforms.Compose(
         [get_transforms(eval=False, aug=aug["stl10"])]
@@ -318,7 +357,7 @@ def create_validation_sampler(dataset_size):
     return train_sampler, valid_sampler
 
 
-def get_transforms(eval=False, aug=None, dataset="stl10"):
+def get_transforms(eval=False, aug=None):
     trans = []
 
     if aug["randcrop"] and not eval:
