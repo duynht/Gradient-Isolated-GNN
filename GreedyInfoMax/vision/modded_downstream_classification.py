@@ -61,7 +61,7 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
             # print(z.shape)
             fusion_vector = {
                 'img': z,
-                'desc': desc
+                'desc': desc.to(opt.device)
             }
 
             prediction = classification_model(fusion_vector)
@@ -162,7 +162,7 @@ def test_logistic_regression(opt, context_model, classification_model, test_load
         # z = torch.mean(torch.mean(z, -1, True), -1, True)
         fusion_vector = {
                 'img': z,
-                'desc': desc
+                'desc': desc.to(opt.device)
             }
 
         prediction = classification_model(fusion_vector)
