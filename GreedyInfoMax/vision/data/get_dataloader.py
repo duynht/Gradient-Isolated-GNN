@@ -19,7 +19,9 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from nltk.tokenize import word_tokenize
 import string
 from gensim.models.fasttext import FastText
+import nltk
 
+nltk.download('all')
 
 class AttributeDiscoveryDataset(Dataset):
     def __init__(self, path_df, root_dir=None, transform=None, opt=None, word_embed_path="/content/drive/My Drive/Multimodal-Greedy-InfoMax/ad-fasttext.model", word_embed_length=100):
