@@ -124,10 +124,11 @@ def test_logistic_regression(opt, context_model, classification_model, test_load
 
     loss_epoch = 0
     epoch_acc1 = 0
-    epoch_acc5 = 0
+    epoch_acc3 = 0
 
-    for step, (full_img, target) in enumerate(test_loader):
-
+    for step, batch in enumerate(test_loader):
+        full_img, desc, target = batch['img'], batch['desc'], batch['label']
+        classification_model.zero_grad()
         batch_size, num_channels, img_h, img_w = full_img.shape
         patches = []
         # first patch
@@ -159,29 +160,34 @@ def test_logistic_regression(opt, context_model, classification_model, test_load
 
         z = z.detach()  # double security that no gradients go to representation learning part of model
         # z = torch.mean(torch.mean(z, -1, True), -1, True)
-        prediction = classification_model(z)
+        fusion_vector = {
+                'img': z,
+                'desc': desc
+            }
+
+        prediction = classification_model(fusion_vector)
 
         target = target.to(opt.device)
         loss = criterion(prediction, target)
 
         # calculate accuracy
-        acc1, acc5 = utils.accuracy(prediction.data, target, topk=(1, 5))
+        acc1, acc3 = utils.accuracy(prediction.data, target, topk=(1, 3))
         epoch_acc1 += acc1
-        epoch_acc5 += acc5
+        epoch_acc3 += acc3
 
         sample_loss = loss.item()
         loss_epoch += sample_loss
 
         if step % 10 == 0:
             print(
-                "Step [{}/{}], Time (s): {:.1f}, Acc1: {:.4f}, Acc5: {:.4f}, Loss: {:.4f}".format(
-                    step, total_step, time.time() - starttime, acc1, acc5, sample_loss
+                "Step [{}/{}], Time (s): {:.1f}, Acc1: {:.4f}, Acc3: {:.4f}, Loss: {:.4f}".format(
+                    step, total_step, time.time() - starttime, acc1, acc3, sample_loss
                 )
             )
             starttime = time.time()
 
     print("Testing Accuracy: ", epoch_acc1 / total_step)
-    return epoch_acc1 / total_step, epoch_acc5 / total_step, loss_epoch / total_step
+    return epoch_acc1 / total_step, epoch_acc3 / total_step, loss_epoch / total_step
 
 
 if __name__ == "__main__":
