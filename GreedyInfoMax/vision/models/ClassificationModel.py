@@ -6,7 +6,8 @@ class ClassificationModel(torch.nn.Module):
     def __init__(self, in_channels=256, num_classes=200, hidden_nodes=0, avg_pooling_kernel_size=7):
         super().__init__()
         self.in_channels = in_channels
-        self.avg_pool = nn.AvgPool2d((avg_pooling_kernel_size, avg_pooling_kernel_size), stride=0, padding=0)
+        self.avg_pool = nn.AvgPool2d(
+            (avg_pooling_kernel_size, avg_pooling_kernel_size), stride=0, padding=0)
         self.model = nn.Sequential()
 
         if hidden_nodes > 0:
@@ -31,5 +32,27 @@ class ClassificationModel(torch.nn.Module):
     def forward(self, x, *args):
         x = self.avg_pool(x).squeeze()
         x = x.view(x.size(0), -1)
+        x = self.model(x).squeeze()
+        return x
+
+
+class FusionClassificationModel(torch.nn.Module):
+    def __init__(self, num_classes=200, output_dim=32, word_vector_size = 3300):
+        super().__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d((output_dim, output_dim))
+        self.model = nn.Sequential()
+        
+        self.model.add_module(
+            "layer1", nn.Linear(output_dim * output_dim + word_vector_size, num_classes, bias=True)
+        )
+
+        print(self.model)
+
+    def forward(self, inputs, *args):
+        x, word_vectors = inputs['img'], inputs['desc']
+        x = self.avg_pool(x).squeeze()
+        x = x.view(x.size(0), -1)
+        word_vectors = word_vectors.view(word_vectors.size(0), -1)
+        x = torch.cat((x, word_vectors), dim=1)
         x = self.model(x).squeeze()
         return x
