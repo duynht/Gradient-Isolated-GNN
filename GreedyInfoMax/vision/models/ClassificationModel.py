@@ -49,10 +49,16 @@ class FusionClassificationModel(torch.nn.Module):
         print(self.model)
 
     def forward(self, inputs, *args):
+        print("==")
         x, word_vectors = inputs['img'], inputs['desc']
+        print(x.shape)
         x = self.avg_pool(x).squeeze()
+        print(x.shape)
         x = x.view(x.size(0), -1)
+        print(x.shape)
         word_vectors = word_vectors.view(word_vectors.size(0), -1)
+        print(word_vectors.shape)
         x = torch.cat((x, word_vectors.float()), dim=1)
+        print(x.shape)
         x = self.model(x).squeeze()
         return x
