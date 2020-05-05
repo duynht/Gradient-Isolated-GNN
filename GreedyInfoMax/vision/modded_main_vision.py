@@ -121,7 +121,7 @@ def train(opt, models):
 
                     loss_epoch[idx] += print_loss
                     loss_updates[idx] += 1
-            print("Time of current batch: {}", time.time() - batch_start_time)
+        print("Time of current batch: {}", time.time() - batch_start_time)
 
         for patch_idx in range(4):
             if opt.validate:
