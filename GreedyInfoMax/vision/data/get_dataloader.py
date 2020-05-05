@@ -63,10 +63,10 @@ class AttributeDiscoveryDataset(Dataset):
                     wv = np.zeros(self.word_embed_length).astype(np.float64)
                 new_desc.append(wv)
             desc = new_desc
-            if len(desc) >= 33:
-                desc = np.array(desc[:33])
+            if len(desc) >= 24:
+                desc = np.array(desc[:24])
             else:
-                num_pads = 33 - len(desc)
+                num_pads = 24 - len(desc)
                 desc.extend([np.zeros(self.word_embed_length).astype(np.float64) for i in range(num_pads)])
             desc = np.asarray(desc)
             desc = desc.ravel()
@@ -88,6 +88,7 @@ class AttributeDiscoveryDataset(Dataset):
         tokens = [t.translate(table) for t in tokens]
         # remove tokens not alphanumeric
         tokens = [t for t in tokens if t.isalpha()]
+        tokens = list(filter(lambda token: len(token) > 3, tokens))
         return tokens
 
 

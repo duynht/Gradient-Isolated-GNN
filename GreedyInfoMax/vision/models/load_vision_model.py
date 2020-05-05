@@ -54,6 +54,6 @@ def load_classification_model(opt, avg_pooling_kernel_size = 7):
     return classification_model
 
 def load_fusion_classification_model(opt):
-    classification_model = ClassificationModel.FusionClassificationModel(num_classes=4).to(opt.device)
+    classification_model = ClassificationModel.FusionClassificationModel(num_classes=4, word_vector_size=2400).to(opt.device)
 
     return classification_model
