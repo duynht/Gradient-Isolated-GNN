@@ -22,8 +22,8 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
         epoch_acc5 = 0
 
         loss_epoch = 0
-        for step, (full_img, target) in enumerate(train_loader):
-
+        for step, batch in enumerate(train_loader):
+            full_img, desc, target = batch['img'], batch['desc'], batch['label']
             classification_model.zero_grad()
 
             batch_size, num_channels, img_h, img_w = full_img.shape
@@ -59,7 +59,12 @@ def train_logistic_regression(opt, context_models, classification_model, train_l
             # print(z.shape)
             # z = torch.mean(torch.mean(z, -1, True), -2, True)
             # print(z.shape)
-            prediction = classification_model(z)
+            fusion_vector = {
+                'img': z,
+                'desc': desc
+            }
+
+            prediction = classification_model(fusion_vector)
 
             target = target.to(opt.device)
             loss = criterion(prediction, target)
@@ -213,8 +218,7 @@ if __name__ == "__main__":
 
     _, _, train_loader, _, test_loader, _ = get_dataloader.get_dataloader(opt)
 
-    classification_model = load_vision_model.load_classification_model(
-        opt, avg_pooling_kernel_size=3)
+    classification_model = load_vision_model.load_fusion_classification_model(opt)
 
     if opt.model_type == 2:
         params = list(context_model.parameters()) + \
