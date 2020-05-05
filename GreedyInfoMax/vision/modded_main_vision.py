@@ -59,7 +59,7 @@ def train(opt, models):
             batch_size, num_channels, img_h, img_w = full_img.shape
             components = []
             step_h = img_h // opt.grid_dims
-            step_w = img_h // opt.grid_dims
+            step_w = img_w // opt.grid_dims
             for height in range(0, img_h, step_h):
                 for width in range(0, img_w, step_w):
                     components.append(full_img[:, :, height:height+step_h, width:width+step_w])  
