@@ -53,6 +53,6 @@ class FusionClassificationModel(torch.nn.Module):
         x = self.avg_pool(x).squeeze()
         x = x.view(x.size(0), -1)
         word_vectors = word_vectors.view(word_vectors.size(0), -1)
-        x = torch.cat((x.double(), word_vectors), dim=1)
+        x = torch.cat((x, word_vectors.float()), dim=1)
         x = self.model(x).squeeze()
         return x
