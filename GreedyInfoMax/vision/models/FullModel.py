@@ -27,6 +27,12 @@ class FullVisionModel(torch.nn.Module):
         block_dims = [3, 4, 6, 6, 6, 6, 6]
         num_channels = [64, 128, 256, 256, 256, 256, 256]
 
+        prefix_channels = 64
+        while not (prefix_channels == 64 // opt.grid_dims):
+            prefix_channels = prefix_channels // 2
+            block_dims = [3] + block_dims
+            num_channels = [prefix_channels] + num_channels
+
         full_model = nn.ModuleList([])
         encoder = nn.ModuleList([])
 

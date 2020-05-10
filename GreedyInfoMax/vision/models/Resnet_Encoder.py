@@ -75,7 +75,7 @@ class ResNet_Encoder(nn.Module):
         num_blocks,
         filter,
         encoder_num,
-        patch_size=16,
+        patch_size=4,
         input_dims=3,
         calc_loss=False,
     ):
