@@ -32,10 +32,13 @@ class AttributeDiscoveryDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
+       # DataFrame containing the path
         self.path_df = path_df
-        self.root_dir = root_dir
+        # List of image transformation
         self.transform = transform
+        # Word embedding that has been finetune to the unsupervised dataset
         self.word_embed = FastText.load(word_embed_path)
+        # The length of a word vector
         self.word_embed_length = word_embed_length
     def __len__(self):
         return len(self.path_df.index)
@@ -47,27 +50,36 @@ class AttributeDiscoveryDataset(Dataset):
         img_path = self.path_df.iloc[idx, 0]
         # image = io.imread(img_path)
         image = Image.open(img_path)
+        # if image is grayscale, convert to its color representation
         if len(image.size) == 2:
             image = image.convert("RGB")
+        
         label = self.path_df.iloc[idx, 1]
         desc_path = self.path_df.iloc[idx, 2]
+        # read description text from file
         with open(desc_path, 'r') as file:
             desc = ''.join(file.read())
             desc = self.preprocessing(desc)
             new_desc = []
+
+            # create the FastText embedding for each word
             for token in desc:
                 try:
                     wv = self.word_embed[token]
+                # if no ngram exists then create a zero vect
                 except KeyError as e:
                     print(e)
                     wv = np.zeros(self.word_embed_length).astype(np.float64)
                 new_desc.append(wv)
             desc = new_desc
+
+            # ensure that the number of words for each sentence is 24
             if len(desc) >= 24:
                 desc = np.array(desc[:24])
             else:
                 num_pads = 24 - len(desc)
                 desc.extend([np.zeros(self.word_embed_length).astype(np.float64) for i in range(num_pads)])
+            # convert vector to numpy
             desc = np.asarray(desc)
             desc = desc.ravel()
             desc = torch.from_numpy(desc).double()
@@ -124,10 +136,13 @@ def get_dataloader(opt):
         print("Number of ties images: ", len(img_paths[2]))
         print("Number of womens images: ", len(img_paths[3]))
 
+        # choose the new dataset size as the size of the smallest class
         new_size = min(len(img_paths[0]), len(
             img_paths[1]), len(img_paths[2]), len(img_paths[3]))
         print("\nAfter class balancing, the size of each class is", new_size)
 
+        # divide the dataset into 2 parts: 1 for supervised dataset (to ensure classes balance),
+        # 1 for unsupervised dataset (for Greedy InfoMax pretraining)
         def resize_dataset(dataset):
             dataset_size = len(dataset)
             indices = list(range(dataset_size))
@@ -155,6 +170,7 @@ def get_dataloader(opt):
         for img_path in unsupervised:
             unsup_img_label_list.append([img_path, 4])
 
+        # create DataFrame for supervised and unsupervised dataset
         df = pd.DataFrame(img_label_list, columns=['img_path', 'label'])
         unsup_df = pd.DataFrame(unsup_img_label_list,
                                 columns=['img_path', 'label'])
@@ -166,7 +182,7 @@ def get_dataloader(opt):
             desc_path = directory_path + '/descr_' + unique_sample_id
             desc_path = desc_path[:-3] + 'txt'
             return desc_path
-
+        # append the corresponding description file path, given the image path
         df['desc_path'] = df.apply(
             lambda row: img_path_to_desc_path(row['img_path']), axis=1)
         unsup_df['desc_path'] = unsup_df.apply(
